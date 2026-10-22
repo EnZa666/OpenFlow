@@ -123,6 +123,7 @@ function usageReport(history, now = new Date(), pricePerMinute = TRANSCRIBE_USD_
     days.push({ date, words: 0, durationMs: 0, dictations: 0, costUsd: 0 });
   }
   for (const row of history || []) {
+    if (row && row.stt_engine === "parakeet") continue;
     const created = new Date(row && row.created_at);
     if (Number.isNaN(created.getTime())) continue;
     const slot = index.get(localDateKey(created));

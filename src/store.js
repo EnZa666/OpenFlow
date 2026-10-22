@@ -152,6 +152,7 @@ function createStore(filePath) {
         app_name: input.app_name || "",
         url: input.url || "",
         status: input.status || "done",
+        stt_engine: input.stt_engine || "openai",
         duration_ms: Number(input.duration_ms) || 0,
         word_count: Number(input.word_count) || 0,
         archived: false,

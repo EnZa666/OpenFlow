@@ -697,8 +697,10 @@ function openSpeechSession() {
   for (const [key, session] of speechSessions) {
     if (now - session.created > 6 * 60 * 60 * 1000) speechSessions.delete(key);
   }
+  const sttEngine = store && store.getSettings().sttEngine === "openai" ? "openai" : "parakeet";
   speechSessions.set(token, {
     created: now,
+    sttEngine,
     texts: [],
     language: "",
     pending: Promise.resolve(),
@@ -710,9 +712,11 @@ function openSpeechSession() {
 async function commitTranscript(raw, prepared, meta) {
   store.touchDictionary(prepared.usedPhrases, "used");
   let text = prepared.text;
+  const sttEngine = (meta && meta.sttEngine) || (store && store.getSettings().sttEngine === "openai" ? "openai" : "parakeet");
   const history = store.addHistory({
     asr_text: raw,
     formatted_text: text,
+    stt_engine: sttEngine,
     language: meta.language || "",
     app_name: meta.appName || "",
     url: meta.url || "",
@@ -1155,6 +1159,7 @@ const actions = {
     const mime = payload.mime || "audio/wav";
     const filename = payload.filename || (String(mime).includes("wav") ? "recording.wav" : "recording.webm");
     const sttEngine = store.getSettings().sttEngine === "openai" ? "openai" : "parakeet";
+    session.sttEngine = sttEngine;
     session.pending = session.pending.then(async () => {
       if (session.failed) return;
       try {
@@ -1195,6 +1200,7 @@ const actions = {
       url: payload.url,
       durationMs: payload.durationMs || 0,
       language: session.language,
+      sttEngine: session.sttEngine,
       paste: true,
       overlay: false,
     });

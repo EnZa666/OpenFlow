@@ -84,7 +84,7 @@ OpenFlow has **zero subscriptions or middleman fees**:
 
 Download the latest Windows installer from the [**Releases**](https://github.com/LuiInventions/OpenFlow/releases) page:
 
-- **`OpenFlow-Setup-0.4.0.exe`** — Standard Windows NSIS installer with customizable install directory, Start Menu entry, and Desktop shortcut. When installation finishes, OpenFlow checks whether **Parakeet v3** is already installed (skipping download if present, or showing a live MB progress bar) and then opens the UI so you can choose **Local (Parakeet v3)** or **OpenAI API**.
+- **`OpenFlow-Setup-0.5.0.exe`** — Standard Windows NSIS installer with customizable install directory, Start Menu entry, and Desktop shortcut. When installation finishes, OpenFlow checks whether **Parakeet v3** is already installed (skipping download if present, or showing a live MB progress bar) and then opens the UI so you can choose **Local (Parakeet v3)** or **OpenAI API**.
 
 Requirements: Windows 10 or Windows 11 (64-bit). An OpenAI API key is optional.
 
@@ -98,7 +98,7 @@ npm test
 npm run dist
 ```
 
-This builds the Windows NSIS installer (`release/OpenFlow-Setup-0.4.0.exe`).
+This builds the Windows NSIS installer (`release/OpenFlow-Setup-0.5.0.exe`).
 
 ---
 

@@ -45,7 +45,8 @@ test("stats count local history only", () => {
 test("usageReport sums the last 30 local days from history", () => {
   const now = new Date(2026, 9, 22, 15, 0, 0);
   const report = flow.usageReport([
-    { created_at: new Date(2026, 9, 22, 9, 0, 0).toISOString(), word_count: 10, duration_ms: 60000, formatted_text: "hallo welt" },
+    { created_at: new Date(2026, 9, 22, 9, 0, 0).toISOString(), word_count: 10, duration_ms: 60000, formatted_text: "hallo welt", stt_engine: "openai" },
+    { created_at: new Date(2026, 9, 22, 10, 0, 0).toISOString(), word_count: 50, duration_ms: 120000, formatted_text: "lokal", stt_engine: "parakeet" },
     { created_at: new Date(2026, 8, 23, 12, 0, 0).toISOString(), word_count: 2, duration_ms: 30000 },
     { created_at: new Date(2026, 8, 22, 12, 0, 0).toISOString(), word_count: 99, duration_ms: 999999 },
     { created_at: "kein-datum", word_count: 5, duration_ms: 1000 },

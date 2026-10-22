@@ -12,6 +12,7 @@ const state = {
   view: "dictate",
   editor: null,
   confirmDeleteId: null,
+  confirmSttEngine: null,
   askKey: false,
   onboardingStep: null,
 };
@@ -203,7 +204,7 @@ function usageHtml() {
     return `<i style="height:${height}%" title="${esc(label)}"></i>`;
   }).join("");
   const price = new Intl.NumberFormat("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(report.pricePerMinute || 0.0045);
-  return `<div class="stats"><article class="stat"><b>${minutes(report.durationMs)} min</b><span>Audio, ${report.dictations || 0} dictations</span></article><article class="stat"><b>${money(report.costUsd)}</b><span>Estimated API cost</span></article><article class="stat"><b>${new Intl.NumberFormat("en-US").format(report.words || 0)}</b><span>Spoken words</span></article></div><div class="chart-card"><div class="chart" role="img" aria-label="Usage over the last 30 days">${bars}</div><div class="axis"><span>${esc(dayLabel(report.from))}</span><span>${esc(dayLabel(report.to))}</span></div></div><p class="note">Estimated at list price: ${price} USD per minute (gpt-transcribe). Local Parakeet v3 dictations are free ($0.00).</p>`;
+  return `<div class="stats"><article class="stat"><b>${minutes(report.durationMs)} min</b><span>Audio, ${report.dictations || 0} dictations</span></article><article class="stat"><b>${money(report.costUsd)}</b><span>Estimated API cost</span></article><article class="stat"><b>${new Intl.NumberFormat("en-US").format(report.words || 0)}</b><span>Spoken words</span></article></div><div class="chart-card"><div class="chart" role="img" aria-label="Usage over the last 30 days">${bars}</div><div class="axis"><span>${esc(dayLabel(report.from))}</span><span>${esc(dayLabel(report.to))}</span></div></div><p class="note">Only dictations made with OpenAI (gpt-transcribe) are counted here (${price} USD per minute).</p>`;
 }
 
 function settingsHtml() {
@@ -292,6 +293,14 @@ function paintOnboarding() {
 function paintConfirmModal() {
   const host = document.querySelector("#confirm-modal");
   if (!host) return;
+  if (state.confirmSttEngine) {
+    const label = state.confirmSttEngine === "openai"
+      ? "OpenAI API (gpt-transcribe)"
+      : "Parakeet v3 (Open-Source, Local)";
+    host.hidden = false;
+    host.innerHTML = `<div class="onboarding-card" role="dialog" aria-modal="true"><div><h2>Switch Speech-to-Text Model?</h2><p class="sub">Use <strong>${esc(label)}</strong> for all dictation sessions?</p></div><div class="onboarding-actions"><button type="button" class="btn-secondary" data-confirm-cancel>Cancel</button><button type="button" class="btn-primary" data-confirm-stt-ok>OK</button></div></div>`;
+    return;
+  }
   if (!state.confirmDeleteId) {
     host.hidden = true;
     host.innerHTML = "";
@@ -326,9 +335,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const sttSelect = event.target.closest("[data-stt-select]");
     if (sttSelect && window.openflow) {
       const nextEngine = sttSelect.dataset.sttSelect === "openai" ? "openai" : "parakeet";
-      await window.openflow.dispatch("settings.save", { sttEngine: nextEngine, onboardingDone: true });
-      if (nextEngine === "parakeet") state.askKey = false;
-      await load();
+      state.confirmDeleteId = null;
+      state.confirmSttEngine = nextEngine;
+      paintConfirmModal();
       return;
     }
 
@@ -382,7 +391,16 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelector("#confirm-modal").addEventListener("click", async (event) => {
     if (event.target.closest("[data-confirm-cancel]") || event.target === document.querySelector("#confirm-modal")) {
       state.confirmDeleteId = null;
+      state.confirmSttEngine = null;
       paintConfirmModal();
+      return;
+    }
+    if (event.target.closest("[data-confirm-stt-ok]") && state.confirmSttEngine) {
+      const nextEngine = state.confirmSttEngine;
+      state.confirmSttEngine = null;
+      await window.openflow.dispatch("settings.save", { sttEngine: nextEngine, onboardingDone: true });
+      if (nextEngine === "parakeet") state.askKey = false;
+      await load();
       return;
     }
     if (event.target.closest("[data-confirm-delete]") && state.confirmDeleteId) {
