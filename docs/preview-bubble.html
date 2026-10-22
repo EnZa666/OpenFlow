@@ -12,23 +12,20 @@
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; background: var(--sand-500); color: var(--vast-950); font-family: "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
-    body { width: 1100px; height: 460px; padding: 34px 42px 30px; display: flex; flex-direction: column; justify-content: space-between; }
-    h1 { margin: 0; font-family: Georgia, serif; font-size: 32px; font-weight: 500; letter-spacing: -0.025em; }
-    .lead { margin: 6px 0 0; color: var(--vast-600); font-size: 15.5px; }
-    .showcase { background: var(--sand-50); border: 1px solid var(--sand-600); border-radius: 20px; padding: 32px 24px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
-    .tooltip-row { display: flex; gap: 14px; margin-bottom: 6px; }
+    body { width: 1100px; height: 460px; padding: 28px 40px 28px; display: flex; flex-direction: column; justify-content: space-between; gap: 16px; }
+    h1 { margin: 0; font-family: Georgia, serif; font-size: 30px; font-weight: 500; letter-spacing: -0.025em; }
+    .lead { margin: 5px 0 0; color: var(--vast-600); font-size: 15px; }
+    .showcase { background: var(--sand-50); border: 1px solid var(--sand-600); border-radius: 20px; padding: 26px 24px 26px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .tooltip-row { display: flex; gap: 14px; }
     .tip { background: #000000; color: #ffffff; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 999px; box-shadow: none; }
     .pill { display: flex; align-items: center; justify-content: center; gap: 8px; width: 204px; height: 48px; padding: 5px; background: #000000; color: #fff; border-radius: 999px; box-shadow: none; }
     .pill div { width: 38px; height: 38px; border-radius: 999px; display: grid; place-items: center; }
     .pill div.active { background: #222222; }
-    .grip-row { display: flex; align-items: center; gap: 10px; margin-top: 2px; font-size: 12px; color: var(--vast-600); }
-    .grip { width: 58px; height: 12px; border-radius: 999px; background: #000000; clip-path: inset(2px 0 2px 0); display: flex; align-items: center; justify-content: center; }
-    .grip span { width: 22px; height: 2px; border-radius: 999px; background: rgba(255,255,255,.82); }
     .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-    article { background: var(--sand-50); border: 1px solid var(--sand-600); border-radius: 16px; padding: 16px 18px; }
-    .tag { display: inline-block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--vast-600); margin-bottom: 4px; }
-    strong { display: block; font-size: 16px; margin-bottom: 6px; color: var(--vast-950); }
-    p { margin: 0; font-size: 13.5px; line-height: 1.45; color: #464544; }
+    article { background: var(--sand-50); border: 1px solid var(--sand-600); border-radius: 16px; padding: 15px 17px 17px; }
+    .tag { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--vast-600); margin-bottom: 4px; }
+    strong { display: block; font-size: 15.5px; margin-bottom: 5px; color: var(--vast-950); }
+    p { margin: 0; font-size: 13px; line-height: 1.44; color: #464544; }
     svg { display: block; }
   </style>
 </head>
@@ -50,14 +47,10 @@
       <div><svg width="22" height="22" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 3.1 14.9 7.4 7.2 15.1H2.9v-4.3z"></path></svg></div>
       <div><svg width="22" height="22" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 6.4V3.2H6.4M11.6 3.2h3.2v3.2M14.8 11.6v3.2h-3.2M6.4 14.8H3.2v-3.2"></path><circle cx="9" cy="9" r="1.7"></circle></svg></div>
     </div>
-    <div class="grip-row">
-      <span>Collapsed state:</span>
-      <div class="grip"><span></span></div>
-    </div>
   </div>
   <div class="grid">
     <article><span class="tag">Hover: "microphone"</span><strong>Microphone</strong><p>Starts voice recording. Click again or press Ctrl+Win to stop and paste into the active text field.</p></article>
-    <article><span class="tag">Hover: "notes"</span><strong>Notes</strong><p>Creates and opens a fresh note immediately in the Notes editor. All notes stay locally on your PC.</p></article>
+    <article><span class="tag">Hover: "notes"</span><strong>Notes</strong><p>Opens the minimalist floating note bubble right above the dock. All saved notes stay locally on your PC.</p></article>
     <article><span class="tag">Hover: "polish"</span><strong>Polish (Pen)</strong><p>Opens the style and rewrite menu (Correction, Engineer, Style) right above the dock.</p></article>
     <article><span class="tag">Hover: "screenshot"</span><strong>Screenshot</strong><p>Launches the bundled monochrome Flameshot region selector to annotate, copy, or save screenshots.</p></article>
   </div>

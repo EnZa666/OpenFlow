@@ -116,8 +116,10 @@ function render() {
     return `<button type="button" data-nav="${id}"${current}>${icon}${label}</button>`;
   }).join("");
   document.querySelector("#title").textContent = views.find(([id]) => id === state.view)[1];
+  const viewHead = document.querySelector(".view-head");
   const view = document.querySelector("#view");
   const showingEditor = state.view === "notes" && Boolean(state.editor);
+  if (viewHead) viewHead.hidden = showingEditor;
   view.hidden = showingEditor;
   if (!showingEditor) {
     if (state.view === "notes") view.innerHTML = notesHtml();
@@ -232,7 +234,7 @@ function paintEditor() {
   }
   editor.dataset.id = editorKey;
   editor.hidden = false;
-  editor.innerHTML = `<div class="editor-bar"><button type="button" id="editor-back">Back</button><div class="editor-actions"><span id="editor-feedback" class="save-badge" aria-live="polite">Saved ✓</span><button type="button" id="editor-save">Save</button></div></div><input id="editor-title" value="${esc(state.editor.title || "")}" placeholder="Note title" aria-label="Title"><textarea id="editor-body" placeholder="Write or paste your note..." aria-label="Note">${esc(state.editor.content || "")}</textarea>`;
+  editor.innerHTML = `<header class="note-bubble-head"><input id="editor-title" value="${esc(state.editor.title || "Note")}" placeholder="Note title" aria-label="Title"><button type="button" id="editor-back">Back</button></header><textarea id="editor-body" placeholder="Write or dictate a note..." aria-label="Note">${esc(state.editor.content || "")}</textarea><footer class="note-bubble-foot"><button type="button" id="editor-copy">Copy</button><button type="button" id="editor-save">Save</button></footer>`;
   const body = editor.querySelector("#editor-body");
   if (body) body.focus();
 }
@@ -349,17 +351,27 @@ document.addEventListener("DOMContentLoaded", () => {
       render();
       return;
     }
+    const copyBtn = event.target.closest("#editor-copy");
+    if (copyBtn && window.openflow) {
+      const body = document.querySelector("#editor-body");
+      await window.openflow.dispatch("clipboard.copy", { text: body ? body.value : "" });
+      copyBtn.textContent = "Copied ✓";
+      copyBtn.classList.add("copied");
+      setTimeout(() => {
+        copyBtn.textContent = "Copy";
+        copyBtn.classList.remove("copied");
+      }, 1000);
+      return;
+    }
     const button = event.target.closest("#editor-save");
     if (!button || !state.editor) return;
     const title = document.querySelector("#editor-title");
     const body = document.querySelector("#editor-body");
-    const feedback = document.querySelector("#editor-feedback");
     const nextTitle = (title && title.value.trim()) ? title.value.trim() : "Note";
     const nextContent = body ? body.value : state.editor.content;
     button.disabled = true;
     button.textContent = "Saved ✓";
     button.classList.add("saved");
-    if (feedback) feedback.classList.add("visible");
     const saved = await window.openflow.dispatch("pads.save", {
       id: state.editor.id || undefined,
       title: nextTitle,

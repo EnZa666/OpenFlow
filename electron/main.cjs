@@ -212,10 +212,10 @@ function placeBar(width, height) {
 }
 
 function sendNotePad() {
-  if (!noteWindow || noteWindow.isDestroyed() || !notePadId) return;
+  if (!noteWindow || noteWindow.isDestroyed()) return;
   const deliver = () => {
-    if (!noteWindow || noteWindow.isDestroyed() || !notePadId) return;
-    noteWindow.webContents.send("note-show", { id: notePadId });
+    if (!noteWindow || noteWindow.isDestroyed()) return;
+    noteWindow.webContents.send("note-show", { id: notePadId || "" });
   };
   if (noteWindow.webContents.isLoading()) noteWindow.webContents.once("did-finish-load", deliver);
   else deliver();
@@ -273,7 +273,7 @@ function showNotePad(id) {
 }
 
 function openFreshNote() {
-  showMain({ newDraftPad: true });
+  showNotePad("");
   return { id: "", isDraft: true, title: "Note", content: "" };
 }
 
@@ -620,7 +620,10 @@ function saveTranscriptNote(text) {
   const body = String(text || "").trim();
   const created = store.savePad({ title: "Note", content: body });
   store.addNotification({ title: "Note", body: "No text field focused — saved as note" });
-  showMain({ openPadId: created.id });
+  showNotePad(created.id);
+  if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) {
+    mainWindow.webContents.send("desk-refresh", {});
+  }
   return created;
 }
 
@@ -1017,7 +1020,13 @@ const actions = {
     return value || {};
   },
   "pads.list": () => store.listPads(),
-  "pads.save": (payload) => store.savePad(payload || {}),
+  "pads.save": (payload) => {
+    const saved = store.savePad(payload || {});
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) {
+      mainWindow.webContents.send("desk-refresh", {});
+    }
+    return saved;
+  },
   "pads.delete": (payload) => {
     store.deletePad(payload.id);
     return true;

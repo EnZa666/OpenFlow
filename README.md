@@ -27,7 +27,7 @@ When idle, the floating bar collapses into a subtle, symmetrically clipped pure-
 | Symbol | Hover Label | What It Does |
 | :--- | :--- | :--- |
 | **Microphone** | `microphone` | Starts voice recording immediately. Click again or press `Ctrl` + `Win` once to finish recording and transcribe. |
-| **Note** | `notes` | Creates a new blank note, opens the Notes workspace, and opens the note editor ready for writing. |
+| **Note** | `notes` | Opens the clean minimalist note-bubble window right above the floating bar (single note open, no tabs). |
 | **Pen / Sparkle** | `polish` | Displays the style modes (`Correction`, `Engineer`, `Style`) in a clean floating popover menu. |
 | **Screenshot** | `screenshot` | Launches the bundled monochrome Flameshot region selector to capture, annotate, copy, or save a screenshot. |
 
@@ -42,7 +42,7 @@ When idle, the floating bar collapses into a subtle, symmetrically clipped pure-
 OpenFlow features a warm, distraction-free two-column layout (`820 × 540`) combining a clean navigation sidebar on the left (with `Dictation`, `Notes`, and `Usage` aligned at the top and `Settings` pinned cleanly at the bottom) and a spacious workspace on the right:
 
 - **Dictation**: Displays the global hold-to-talk shortcut (`Ctrl` + `Win`), the latest transcription with a one-click **Copy** button, and your recent dictation history.
-- **Notes**: Lists all saved notes vertically in proportional, rounded cards with a clean trash icon on the right (asking for confirmation before deleting). Clicking any note—or `+ New Note`—opens the note editor right in place of the list with **`Back`** and **`Save`** actions. Unsaved notes are never persisted unless you explicitly click **`Save`**, which saves your changes and returns to the Notes list.
+- **Notes**: Lists all saved notes vertically in proportional, rounded cards with a clean trash icon on the right (asking for confirmation before deleting). Clicking any note—or `+ New Note`—opens the minimalist note-bubble card over the entire Notes area (editable note title on top, no tabs, max 1 note open, with **`Back`**, **`Copy`**, and **`Save`** actions). Unsaved notes are never persisted unless you explicitly click **`Save`**, which saves your changes and returns to the Notes list.
 - **Usage**: Summarizes your last 30 days of activity—total recorded minutes, estimated API cost, and total spoken words—paired with an activity bar chart computed locally from your saved dictations.
 - **Settings**: Lets you switch anytime between **Parakeet v3 (Open-Source, Local)** and **OpenAI API (`gpt-transcribe`)**, and manage your optional OpenAI API key. Right after installation, OpenFlow checks whether the **Parakeet v3** model is already installed—if not, it shows a dedicated **`Installing open-source STT model`** progress window in MB before launching the UI with the onboarding prompt.
 
@@ -82,7 +82,7 @@ OpenFlow has **zero subscriptions or middleman fees**:
 
 Download the latest Windows installer from the [**Releases**](https://github.com/LuiInventions/OpenFlow/releases) page:
 
-- **`OpenFlow-Setup-0.2.0.exe`** — Standard Windows NSIS installer with customizable install directory, Start Menu entry, Desktop shortcut, and bundled **Parakeet v3** local STT model. When installation finishes, OpenFlow opens automatically so you can choose **Local (Parakeet v3)** or **OpenAI API**.
+- **`OpenFlow-Setup-0.3.0.exe`** — Standard Windows NSIS installer with customizable install directory, Start Menu entry, and Desktop shortcut. When installation finishes, OpenFlow checks whether **Parakeet v3** is already installed (skipping download if present, or showing a live MB progress bar) and then opens the UI so you can choose **Local (Parakeet v3)** or **OpenAI API**.
 
 Requirements: Windows 10 or Windows 11 (64-bit). An OpenAI API key is optional.
 
@@ -96,7 +96,7 @@ npm test
 npm run dist
 ```
 
-This builds the Windows NSIS installer (`release/OpenFlow-Setup-0.2.0.exe`).
+This builds the Windows NSIS installer (`release/OpenFlow-Setup-0.3.0.exe`).
 
 ---
 
