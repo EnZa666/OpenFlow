@@ -45,8 +45,8 @@ OpenFlow features a warm, distraction-free two-column layout (`820 × 540`) comb
 - **Notes**: Lists all saved notes vertically in proportional, rounded cards with a clean trash icon on the right (asking for confirmation before deleting). Clicking any note—or `+ New Note`—opens the minimalist note-bubble card over the entire Notes area (editable note title on top, no tabs, max 1 note open, with **`Back`**, **`Copy`**, and **`Save`** actions). Unsaved notes are never persisted unless you explicitly click **`Save`**, which saves your changes and returns to the Notes list.
 - **Usage**: Summarizes your last 30 days of activity—total recorded minutes, estimated API cost, and total spoken words—paired with an activity bar chart computed locally from your saved dictations.
 - **Settings**:
-  - **Dictation**: Choose your global dictation shortcut between **`Ctrl + Win` (Default)**, **`Ctrl + Space`**, **`Ctrl + Alt`**, or **`Ctrl + Shift`**, and use the mode toggle switch to switch between **Hold Shortcut to Dictate** (hold to speak, release to finish) and **Press Once to Start / Second Time to Stop**.
   - **Speech-to-Text Engine**: Switch anytime between **Parakeet v3 (Open-Source, Local)** and **OpenAI API (`gpt-transcribe`)**, and manage your optional OpenAI API key. Right after installation, OpenFlow checks whether the **Parakeet v3** model is already installed—if not, it shows a dedicated **`Installing open-source STT model`** progress window in MB before launching the UI with the onboarding prompt.
+  - **Dictation**: Choose your global dictation shortcut between **`Ctrl + Win` (Default)**, **`Ctrl + Space`**, **`Ctrl + Alt`**, or **`Ctrl + Shift`**, and use the mode toggle switch to switch between **Hold Shortcut to Dictate** (hold to speak, release to finish) and **Press Once to Start / Second Time to Stop**.
 
 ---
 
@@ -84,7 +84,7 @@ OpenFlow has **zero subscriptions or middleman fees**:
 
 Download the latest Windows installer from the [**Releases**](https://github.com/LuiInventions/OpenFlow/releases) page:
 
-- **`OpenFlow-Setup-0.6.0.exe`** — Standard Windows NSIS installer with customizable install directory, Start Menu entry, and Desktop shortcut. When installation finishes, OpenFlow checks whether **Parakeet v3** is already installed (skipping download if present, or showing a live MB progress bar) and then opens the UI so you can choose **Local (Parakeet v3)** or **OpenAI API**.
+- **`OpenFlow-Setup-0.7.0.exe`** — Standard Windows NSIS installer with customizable install directory, Start Menu entry, and Desktop shortcut. When installation finishes, OpenFlow checks whether **Parakeet v3** is already installed (skipping download if present, or showing a live MB progress bar) and then opens the UI so you can choose **Local (Parakeet v3)** or **OpenAI API**.
 
 Requirements: Windows 10 or Windows 11 (64-bit). An OpenAI API key is optional.
 
@@ -98,7 +98,7 @@ npm test
 npm run dist
 ```
 
-This builds the Windows NSIS installer (`release/OpenFlow-Setup-0.6.0.exe`).
+This builds the Windows NSIS installer (`release/OpenFlow-Setup-0.7.0.exe`).
 
 ---
 

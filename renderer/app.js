@@ -212,24 +212,6 @@ function settingsHtml() {
   const sttEngine = settings.sttEngine === "openai" ? "openai" : "parakeet";
   const shortcut = settings.dictationShortcut || "ctrl+win";
   const isToggle = settings.dictationMode === "toggle";
-  const pk = settings.parakeet || { installed: false, state: "stopped" };
-  let pkBadge = "Local Model";
-  let pkReady = false;
-  if (sttEngine === "parakeet") {
-    if (pk.state === "ready" || pk.installed) {
-      pkBadge = "Active in Background";
-      pkReady = true;
-    } else if (pk.state === "installing") {
-      pkBadge = "Installing Model...";
-    } else if (pk.state === "loading") {
-      pkBadge = "Loading Model...";
-    } else {
-      pkBadge = "Ready";
-      pkReady = true;
-    }
-  } else if (pk.installed) {
-    pkBadge = "Installed";
-  }
   const shortcuts = [
     { id: "ctrl+win", keys: "<kbd>Ctrl</kbd> + <kbd>Win</kbd>", sub: "Default" },
     { id: "ctrl+space", keys: "<kbd>Ctrl</kbd> + <kbd>Space</kbd>", sub: "Spacebar" },
@@ -249,8 +231,8 @@ function settingsHtml() {
   const ask = (sttEngine === "openai" && (state.askKey || !settings.hasKey))
     ? `<div class="prompt-banner">Please enter your OpenAI API key to use cloud speech recognition, or switch to Parakeet v3 (Local).</div>`
     : "";
-  const sttCard = `<div class="settings-card">${ask}<div class="section-label">Speech-to-Text Engine</div><div class="engine-grid" role="radiogroup" aria-label="Speech-to-Text Engine"><button type="button" class="engine-option" role="radio" data-stt-select="parakeet" aria-checked="${sttEngine === "parakeet" ? "true" : "false"}"><div class="engine-head"><strong>Parakeet v3 (Open-Source)</strong><span class="engine-badge${pkReady ? " ready" : ""}">${esc(pkBadge)}</span></div><p>Runs locally on your PC in the background. Free and requires no API key.</p></button><button type="button" class="engine-option" role="radio" data-stt-select="openai" aria-checked="${sttEngine === "openai" ? "true" : "false"}"><div class="engine-head"><strong>OpenAI API</strong><span class="engine-badge${sttEngine === "openai" && settings.hasKey ? " ready" : ""}">${settings.hasKey ? "Key Saved" : "Cloud"}</span></div><p>Uses OpenAI gpt-transcribe with your personal API key.</p></button></div><label class="key">OpenAI API Key ${sttEngine === "parakeet" ? "(Optional)" : ""}<div class="key-row"><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(hint)}"><button type="button" id="save-key" class="btn-primary">Save Key</button></div></label></div>`;
-  return `${dictationCard}${sttCard}`;
+  const sttCard = `<div class="settings-card">${ask}<div class="section-label">Speech-to-Text Engine</div><div class="engine-grid" role="radiogroup" aria-label="Speech-to-Text Engine"><button type="button" class="engine-option" role="radio" data-stt-select="parakeet" aria-checked="${sttEngine === "parakeet" ? "true" : "false"}"><div class="engine-head"><strong>Parakeet v3 (Open-Source)</strong></div><p>Runs locally on your PC in the background. Free and requires no API key.</p></button><button type="button" class="engine-option" role="radio" data-stt-select="openai" aria-checked="${sttEngine === "openai" ? "true" : "false"}"><div class="engine-head"><strong>OpenAI API</strong></div><p>Uses OpenAI gpt-transcribe with your personal API key.</p></button></div><label class="key">OpenAI API Key ${sttEngine === "parakeet" ? "(Optional)" : ""}<div class="key-row"><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(hint)}"><button type="button" id="save-key" class="btn-primary">Save Key</button></div></label></div>`;
+  return `${sttCard}${dictationCard}`;
 }
 
 function paintEditor() {
