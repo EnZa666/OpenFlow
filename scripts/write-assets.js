@@ -55,6 +55,19 @@ function ico(pngBytes) {
   return Buffer.concat([header, entry, pngBytes]);
 }
 
+function distSegment(px, py, ax, ay, bx, by) {
+  const vx = bx - ax;
+  const vy = by - ay;
+  const wx = px - ax;
+  const wy = py - ay;
+  const c1 = vx * wx + vy * wy;
+  if (c1 <= 0) return Math.hypot(px - ax, py - ay);
+  const c2 = vx * vx + vy * vy;
+  if (c2 <= c1) return Math.hypot(px - bx, py - by);
+  const t = c1 / c2;
+  return Math.hypot(px - (ax + t * vx), py - (ay + t * vy));
+}
+
 function paint(size, knockOutWhite) {
   const pixels = Buffer.alloc(size * size * 4);
   const radius = size * 0.22;
@@ -71,26 +84,44 @@ function paint(size, knockOutWhite) {
       pixels[offset + 3] = 255;
     }
   }
-  const cx = (size - 1) / 2;
-  const cy = (size - 1) / 2;
-  const outer = size * 0.3;
-  const inner = size * 0.23;
-  const dot = size * 0.045;
+
+  const barR = size * 0.027;
+  const bars = [
+    { x: size * 0.268, y1: size * 0.435, y2: size * 0.565, r: barR },
+    { x: size * 0.374, y1: size * 0.363, y2: size * 0.637, r: barR },
+    { x: size * 0.478, y1: size * 0.293, y2: size * 0.707, r: barR },
+    { x: size * 0.584, y1: size * 0.399, y2: size * 0.601, r: barR },
+  ];
+  const stemX = size * 0.732;
+  const stemTop = size * 0.305;
+  const stemBot = size * 0.695;
+  const stemR = size * 0.010;
+  const serifX1 = size * 0.710;
+  const serifX2 = size * 0.754;
+  const serifR = size * 0.010;
+
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
       const offset = (y * size + x) * 4;
       if (pixels[offset + 3] === 0) continue;
-      const distance = Math.hypot(x - cx, y - cy);
-      const mark = (distance <= outer && distance >= inner) || distance <= dot;
-      if (!mark) continue;
-      pixels[offset] = 17;
-      pixels[offset + 1] = 17;
-      pixels[offset + 2] = 17;
+      let d = Infinity;
+      for (const b of bars) {
+        d = Math.min(d, distSegment(x, y, b.x, b.y1, b.x, b.y2) - b.r);
+      }
+      d = Math.min(d, distSegment(x, y, stemX, stemTop, stemX, stemBot) - stemR);
+      d = Math.min(d, distSegment(x, y, serifX1, stemTop, serifX2, stemTop) - serifR);
+      d = Math.min(d, distSegment(x, y, serifX1, stemBot, serifX2, stemBot) - serifR);
+      if (d > 0.5) continue;
+      const cov = Math.max(0, Math.min(1, 0.5 - d));
+      const v = Math.round(255 * (1 - cov));
+      pixels[offset] = v;
+      pixels[offset + 1] = v;
+      pixels[offset + 2] = v;
     }
   }
   if (knockOutWhite) {
     for (let i = 0; i < pixels.length; i += 4) {
-      if (pixels[i] > 250 && pixels[i + 1] > 250 && pixels[i + 2] > 250) pixels[i + 3] = 0;
+      if (pixels[i] > 245 && pixels[i + 1] > 245 && pixels[i + 2] > 245) pixels[i + 3] = 0;
     }
   }
   return png(size, size, pixels);
@@ -160,4 +191,4 @@ for (const [name, events] of Object.entries(cues)) {
 const icon = paint(256);
 fs.writeFileSync(path.join(root, "build", "icon.png"), icon);
 fs.writeFileSync(path.join(root, "build", "icon.ico"), ico(icon));
-fs.writeFileSync(path.join(root, "renderer", "tray.png"), paint(32, true));
+fs.writeFileSync(path.join(root, "renderer", "tray.png"), paint(64, false));

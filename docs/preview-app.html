@@ -13,51 +13,69 @@
     <aside class="sidebar">
       <nav aria-label="Sections">
         <button type="button" data-nav="dictation"><svg viewBox="0 0 16 16"><rect x="6" y="1.5" width="4" height="7.5" rx="2"></rect><path d="M4 8a4 4 0 0 0 8 0M8 12v2"></path></svg>Dictation</button>
-        <button type="button" data-nav="notes" aria-current="page"><svg viewBox="0 0 16 16"><path d="M4 2.5h5.5L12 5v8.5H4z"></path><path d="M9.2 2.6V5.2H12"></path></svg>Notes</button>
-        <button type="button" data-nav="usage"><svg viewBox="0 0 16 16"><path d="M3 12.5V9M6.5 12.5V6.5M10 12.5V4M13.5 12.5V8"></path></svg>Usage</button>
+        <button type="button" data-nav="notes"><svg viewBox="0 0 16 16"><path d="M4 2.5h5.5L12 5v8.5H4z"></path><path d="M9.2 2.6V5.2H12"></path></svg>Notes</button>
+        <button type="button" data-nav="usage" aria-current="page"><svg viewBox="0 0 16 16"><path d="M3 12.5V9M6.5 12.5V6.5M10 12.5V4M13.5 12.5V8"></path></svg>Usage</button>
         <button type="button" data-nav="settings"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.1"></circle><path d="M8 2.2v1.5M8 12.3v1.5M2.2 8h1.5M12.3 8h1.5M3.9 3.9l1.1 1.1M11 11l1.1 1.1M12.1 3.9 11 5M5 11l-1.1 1.1"></path></svg>Settings</button>
       </nav>
     </aside>
     <main>
       <div class="view-head">
-        <h1>Notes</h1>
+        <h1>Usage</h1>
       </div>
       <section id="view">
-        <div class="notes-toolbar">
-          <button type="button" class="text-button">+ New Note</button>
+        <div class="stats">
+          <article class="stat">
+            <b>42.8 min</b>
+            <span>Audio, 128 dictations</span>
+          </article>
+          <article class="stat">
+            <b>$0.19</b>
+            <span>Estimated API cost</span>
+          </article>
+          <article class="stat">
+            <b>6,420</b>
+            <span>Spoken words</span>
+          </article>
         </div>
-        <div class="notes-list" role="list">
-          <div class="note-box" role="listitem">
-            <button type="button" class="note-rename-btn" data-pad-rename="1" title="Rename note" aria-label="Rename note">
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.2 2.5 13.5 4.8 5.6 12.7H3.3v-2.3z"></path></svg>
-            </button>
-            <button type="button" class="note-open-btn" data-pad-open="1">
-              <strong>Sprint Architecture Notes</strong>
-              <span>Spoken dictation via Parakeet v3 automatically opens its note editor when no input field is focused on screen.</span>
-            </button>
-            <button type="button" class="note-delete-btn" data-pad-delete="1" title="Delete note" aria-label="Delete note">×</button>
+        <div class="chart-card">
+          <div class="chart" role="img" aria-label="Usage over the last 30 days">
+            <i style="height:18%"></i>
+            <i style="height:32%"></i>
+            <i style="height:14%"></i>
+            <i style="height:45%"></i>
+            <i style="height:52%"></i>
+            <i style="height:24%"></i>
+            <i style="height:10%"></i>
+            <i style="height:38%"></i>
+            <i style="height:64%"></i>
+            <i style="height:48%"></i>
+            <i style="height:72%"></i>
+            <i style="height:55%"></i>
+            <i style="height:20%"></i>
+            <i style="height:12%"></i>
+            <i style="height:60%"></i>
+            <i style="height:78%"></i>
+            <i style="height:44%"></i>
+            <i style="height:68%"></i>
+            <i style="height:84%"></i>
+            <i style="height:35%"></i>
+            <i style="height:16%"></i>
+            <i style="height:58%"></i>
+            <i style="height:92%"></i>
+            <i style="height:74%"></i>
+            <i style="height:66%"></i>
+            <i style="height:88%"></i>
+            <i style="height:42%"></i>
+            <i style="height:28%"></i>
+            <i style="height:96%"></i>
+            <i style="height:100%"></i>
           </div>
-          <div class="note-box" role="listitem">
-            <button type="button" class="note-rename-btn" data-pad-rename="2" title="Rename note" aria-label="Rename note">
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.2 2.5 13.5 4.8 5.6 12.7H3.3v-2.3z"></path></svg>
-            </button>
-            <button type="button" class="note-open-btn" data-pad-open="2">
-              <strong>Voice Dictation Summary</strong>
-              <span>Local Parakeet v3 (0.6B int8) stays warm in the background for instant zero-cost offline transcription.</span>
-            </button>
-            <button type="button" class="note-delete-btn" data-pad-delete="2" title="Delete note" aria-label="Delete note">×</button>
-          </div>
-          <div class="note-box" role="listitem">
-            <button type="button" class="note-rename-btn" data-pad-rename="3" title="Rename note" aria-label="Rename note">
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.2 2.5 13.5 4.8 5.6 12.7H3.3v-2.3z"></path></svg>
-            </button>
-            <button type="button" class="note-open-btn" data-pad-open="3">
-              <strong>Release Checklist v0.2</strong>
-              <span>Click any note card to open the clean in-place editor with ← Back and Save (returns to list on Save).</span>
-            </button>
-            <button type="button" class="note-delete-btn" data-pad-delete="3" title="Delete note" aria-label="Delete note">×</button>
+          <div class="axis">
+            <span>Sep 23</span>
+            <span>Oct 22</span>
           </div>
         </div>
+        <p class="note">Estimated at list price: $0.0045 USD per minute (gpt-transcribe). Local Parakeet v3 dictations are free ($0.00).</p>
       </section>
     </main>
   </div>

@@ -8,11 +8,11 @@
       --sand-600: #eeebe3;
       --vast-950: #1a1a1a;
     }
-    html, body { margin: 0; background: var(--vast-950); color: var(--sand-50); font-family: "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    html, body { margin: 0; background: var(--vast-950); color: var(--sand-50); font-family: "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
     body { width: 1280px; height: 320px; display: flex; align-items: center; justify-content: space-between; padding: 0 72px; box-sizing: border-box; background: radial-gradient(circle at 85% 20%, #2a2a29 0%, #1a1a1a 65%); }
     .mark { display: flex; align-items: center; gap: 26px; }
-    .icon-box { width: 76px; height: 76px; border-radius: 22px; background: var(--sand-50); display: grid; place-items: center; box-shadow: 0 12px 30px rgba(0,0,0,.35); }
-    .icon-box svg { width: 46px; height: 46px; }
+    .icon-box { width: 84px; height: 84px; border-radius: 22px; background: #ffffff; display: grid; place-items: center; overflow: hidden; box-shadow: 0 12px 30px rgba(0,0,0,.35); }
+    .icon-box img { width: 84px; height: 84px; object-fit: cover; display: block; }
     h1 { margin: 0; font-family: Georgia, "Palatino Linotype", serif; font-size: 62px; font-weight: 500; letter-spacing: -0.035em; color: var(--sand-50); }
     p { margin: 8px 0 0; font-size: 21px; color: #c8c8c2; }
     .cta-group { display: flex; align-items: center; gap: 14px; }
@@ -23,10 +23,7 @@
 <body>
   <div class="mark">
     <div class="icon-box">
-      <svg viewBox="0 0 32 32" aria-hidden="true">
-        <circle cx="16" cy="16" r="10" fill="none" stroke="#1a1a1a" stroke-width="2.4"></circle>
-        <circle cx="16" cy="16" r="2.8" fill="#1a1a1a"></circle>
-      </svg>
+      <img src="logo.png" alt="OpenFlow Logo">
     </div>
     <div>
       <h1>OpenFlow</h1>

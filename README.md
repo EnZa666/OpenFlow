@@ -36,7 +36,7 @@ When idle, the floating bar collapses into a subtle, symmetrically clipped pure-
 ## Application UI & Workspace Tabs
 
 <p align="center">
-  <img src="docs/app.png" alt="OpenFlow Desktop UI showing the left sidebar with top-aligned tabs, bottom Settings tab, and proportional vertical note cards with left rename buttons." width="100%">
+  <img src="docs/app.png" alt="OpenFlow Desktop UI in the Usage tab showing the left sidebar with top-aligned tabs, bottom Settings tab, 30-day audio/cost/word metrics, and activity bar chart." width="100%">
 </p>
 
 OpenFlow features a warm, distraction-free two-column layout (`820 × 540`) combining a clean navigation sidebar on the left (with `Dictation`, `Notes`, and `Usage` aligned at the top and `Settings` pinned cleanly at the bottom) and a spacious workspace on the right:
