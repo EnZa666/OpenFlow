@@ -213,14 +213,14 @@ function settingsHtml() {
   const shortcut = settings.dictationShortcut || "ctrl+win";
   const isToggle = settings.dictationMode === "toggle";
   const shortcuts = [
-    { id: "ctrl+win", keys: "<kbd>Ctrl</kbd> + <kbd>Win</kbd>", sub: "Default" },
-    { id: "ctrl+space", keys: "<kbd>Ctrl</kbd> + <kbd>Space</kbd>", sub: "Spacebar" },
-    { id: "ctrl+alt", keys: "<kbd>Ctrl</kbd> + <kbd>Alt</kbd>", sub: "Modifier" },
-    { id: "ctrl+shift", keys: "<kbd>Ctrl</kbd> + <kbd>Shift</kbd>", sub: "Modifier" },
+    { id: "ctrl+win", keys: "<kbd>Ctrl</kbd> + <kbd>Win</kbd>" },
+    { id: "ctrl+space", keys: "<kbd>Ctrl</kbd> + <kbd>Space</kbd>" },
+    { id: "ctrl+alt", keys: "<kbd>Ctrl</kbd> + <kbd>Alt</kbd>" },
+    { id: "ctrl+shift", keys: "<kbd>Ctrl</kbd> + <kbd>Shift</kbd>" },
   ];
   const shortcutHtml = shortcuts.map((item) => {
     const checked = shortcut === item.id ? "true" : "false";
-    return `<button type="button" class="shortcut-option" role="radio" data-shortcut-select="${item.id}" aria-checked="${checked}"><span class="shortcut-keys">${item.keys}</span><span class="shortcut-sub">${item.sub}</span></button>`;
+    return `<button type="button" class="shortcut-option" role="radio" data-shortcut-select="${item.id}" aria-checked="${checked}"><span class="shortcut-keys">${item.keys}</span></button>`;
   }).join("");
   const modeTitle = isToggle ? "Press Once to Start / Second Time to Stop" : "Hold Shortcut to Dictate";
   const modeDesc = isToggle
