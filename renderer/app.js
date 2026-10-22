@@ -183,15 +183,16 @@ function dictateHtml() {
 
 function notesHtml() {
   const pads = [...(state.desk.pads || [])].reverse();
-  const toolbar = `<div class="notes-toolbar"><button type="button" class="text-button" data-new-pad>+ New Note</button></div>`;
-  if (!pads.length) return `${toolbar}<p class="empty">No notes yet. Click "+ New Note" or dictate without a focused text field.</p>`;
+  const penPaperSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+  const fab = `<button type="button" class="notes-fab" data-new-pad aria-label="New Note" title="New Note">${penPaperSvg}</button>`;
+  if (!pads.length) return `<p class="empty">No notes yet. Tap the button in the bottom right or dictate without a focused text field.</p>${fab}`;
   const trashSvg = '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M3.5 5h11M7 5V3.6c0-.6.5-1.1 1.1-1.1h1.8c.6 0 1.1.5 1.1 1.1V5M5.2 5l.6 9.4c.05.9.8 1.6 1.7 1.6h3c.9 0 1.65-.7 1.7-1.6L12.8 5M7.6 8.2v4.5M10.4 8.2v4.5"></path></svg>';
   const list = `<div class="notes-list" role="list">${pads.map((pad) => {
     const title = pad.title || "Note";
     const preview = String(pad.content || "").trim().replace(/\s+/g, " ") || "Empty note — click to edit";
     return `<div class="note-box" role="listitem"><button type="button" class="note-open-btn" data-pad-open="${esc(pad.id)}"><strong>${esc(title)}</strong><span>${esc(preview)}</span></button><button type="button" class="note-delete-btn" data-pad-delete="${esc(pad.id)}" title="Delete note" aria-label="Delete note">${trashSvg}</button></div>`;
   }).join("")}</div>`;
-  return `${toolbar}${list}`;
+  return `${list}${fab}`;
 }
 
 function usageHtml() {
