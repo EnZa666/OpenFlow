@@ -75,6 +75,7 @@ function unmuteMic() {
   spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptCopy("unmute.ps1")], {
     windowsHide: true,
     stdio: "ignore",
+    cwd: app.getPath("userData"),
   });
 }
 
@@ -83,6 +84,7 @@ function runPowershell(args) {
     const child = spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", ...args], {
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"],
+      cwd: app.getPath("userData"),
     });
     child.on("error", () => resolve(1));
     child.stdout.on("data", () => {});
@@ -358,9 +360,11 @@ function startChord() {
   chord = spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptCopy("chord.ps1")], {
     windowsHide: true,
     stdio: ["ignore", "pipe", "pipe"],
+    cwd: app.getPath("userData"),
     env: Object.assign({}, process.env, {
       OPENFLOW_PIPE: pipeName(),
       OPENFLOW_CHORD: initialChord,
+      OPENFLOW_PARENT_PID: String(process.pid),
       OPENFLOW_LOG: path.join(app.getPath("userData"), "paste.log"),
     }),
   });
@@ -582,6 +586,7 @@ function pasteWithScript(text) {
     ], {
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"],
+      cwd: app.getPath("userData"),
       env: Object.assign({}, process.env, {
         OPENFLOW_PASTE_HWND: String(targetHwnd || 0),
         OPENFLOW_PASTE_B64: Buffer.from(String(text), "utf8").toString("base64"),

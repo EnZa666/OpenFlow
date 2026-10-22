@@ -34,7 +34,63 @@ function dirHasModel(dir) {
   });
 }
 
+function candidateModelDirs(userDataPath) {
+  const dirs = [];
+  if (userDataPath) {
+    dirs.push(path.join(userDataPath, "models", MODEL_ID));
+  }
+  if (process.env.LOCALAPPDATA) {
+    dirs.push(path.join(process.env.LOCALAPPDATA, "OpenFlow", "models", MODEL_ID));
+    dirs.push(path.join(process.env.LOCALAPPDATA, "openflow", "models", MODEL_ID));
+  }
+  if (process.env.APPDATA) {
+    dirs.push(path.join(process.env.APPDATA, "openflow", "models", MODEL_ID));
+    dirs.push(path.join(process.env.APPDATA, "OpenFlow", "models", MODEL_ID));
+  }
+  dirs.push(path.join(__dirname, "..", "vendor", MODEL_ID));
+  return [...new Set(dirs)];
+}
+
+function mirrorModelHardlinks(sourceDir, targetDir) {
+  if (!sourceDir || !targetDir) return;
+  try {
+    if (path.resolve(sourceDir).toLowerCase() === path.resolve(targetDir).toLowerCase()) return;
+    if (dirHasModel(targetDir)) return;
+    fs.mkdirSync(targetDir, { recursive: true });
+    for (const file of REQUIRED_FILES) {
+      const src = path.join(sourceDir, file.name);
+      const dst = path.join(targetDir, file.name);
+      if (fs.existsSync(dst)) {
+        try {
+          if (fs.statSync(dst).size >= file.minBytes) continue;
+          fs.unlinkSync(dst);
+        } catch {}
+      }
+      try {
+        fs.linkSync(src, dst);
+      } catch {
+        // Ignore if cross-device; sourceDir is already valid
+      }
+    }
+  } catch {}
+}
+
 function resolveModelDir(userDataPath) {
+  const candidates = candidateModelDirs(userDataPath);
+  for (const dir of candidates) {
+    if (dirHasModel(dir)) {
+      if (process.env.LOCALAPPDATA) {
+        mirrorModelHardlinks(dir, path.join(process.env.LOCALAPPDATA, "OpenFlow", "models", MODEL_ID));
+      }
+      if (userDataPath) {
+        mirrorModelHardlinks(dir, path.join(userDataPath, "models", MODEL_ID));
+      }
+      return dir;
+    }
+  }
+  if (process.env.LOCALAPPDATA) {
+    return path.join(process.env.LOCALAPPDATA, "OpenFlow", "models", MODEL_ID);
+  }
   if (userDataPath) {
     return path.join(userDataPath, "models", MODEL_ID);
   }
@@ -42,7 +98,7 @@ function resolveModelDir(userDataPath) {
 }
 
 function isModelInstalled(userDataPath) {
-  return dirHasModel(resolveModelDir(userDataPath));
+  return candidateModelDirs(userDataPath).some((dir) => dirHasModel(dir));
 }
 
 async function downloadFile(url, destPath, onChunkBytes) {
@@ -148,6 +204,13 @@ async function ensureModelFiles(userDataPath, onProgress) {
     });
     completedBytes += file.expectedBytes;
     report(0, file.name);
+  }
+
+  if (process.env.LOCALAPPDATA) {
+    mirrorModelHardlinks(dir, path.join(process.env.LOCALAPPDATA, "OpenFlow", "models", MODEL_ID));
+  }
+  if (userDataPath) {
+    mirrorModelHardlinks(dir, path.join(userDataPath, "models", MODEL_ID));
   }
 
   if (typeof onProgress === "function") {

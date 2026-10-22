@@ -55,6 +55,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "include": "build/installer.nsh",
       "shortcutName": "OpenFlow",
       "artifactName": "OpenFlow-Setup-${version}.exe"
     }

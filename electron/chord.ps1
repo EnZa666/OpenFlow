@@ -2,6 +2,7 @@ $ErrorActionPreference = "Stop"
 Add-Type -ReferencedAssemblies UIAutomationClient, UIAutomationTypes -TypeDefinition @"
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
@@ -474,8 +475,22 @@ public static class OpenFlowChord {
 
   private static void WatchFocus() {
     long last = 0;
+    int parentPid = 0;
+    int.TryParse(Environment.GetEnvironmentVariable("OPENFLOW_PARENT_PID") ?? "0", out parentPid);
     while (true) {
       Thread.Sleep(150);
+      if (parentPid > 0) {
+        try {
+          Process parent = Process.GetProcessById(parentPid);
+          if (parent == null || parent.HasExited) {
+            if (hook != IntPtr.Zero) UnhookWindowsHookEx(hook);
+            Environment.Exit(0);
+          }
+        } catch {
+          if (hook != IntPtr.Zero) UnhookWindowsHookEx(hook);
+          Environment.Exit(0);
+        }
+      }
       long hwnd = GetForegroundWindow().ToInt64();
       if (hwnd > 0 && hwnd != last) {
         last = hwnd;
