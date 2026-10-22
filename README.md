@@ -42,9 +42,9 @@ When idle, the floating bar collapses into a subtle, symmetrically clipped pure-
 OpenFlow features a warm, distraction-free two-column layout (`820 × 540`) combining a clean navigation sidebar on the left (with `Dictation`, `Notes`, and `Usage` aligned at the top and `Settings` pinned cleanly at the bottom) and a spacious workspace on the right:
 
 - **Dictation**: Displays the global hold-to-talk shortcut (`Ctrl` + `Win`), the latest transcription with a one-click **Copy** button, and your recent dictation history.
-- **Notes**: Lists all notes vertically in proportional, rounded cards. Each note card includes a **Rename button on the left** for quick inline renaming and a delete button on the right. Clicking any note opens the full note editor right in place of the list, complete with a clean **`← Back`** button and a **`Save`** button that saves your changes and returns to the Notes list.
+- **Notes**: Lists all saved notes vertically in proportional, rounded cards with a clean trash icon on the right (asking for confirmation before deleting). Clicking any note—or `+ New Note`—opens the note editor right in place of the list with **`Back`** and **`Save`** actions. Unsaved notes are never persisted unless you explicitly click **`Save`**, which saves your changes and returns to the Notes list.
 - **Usage**: Summarizes your last 30 days of activity—total recorded minutes, estimated API cost, and total spoken words—paired with an activity bar chart computed locally from your saved dictations.
-- **Settings**: Lets you switch anytime between **Parakeet v3 (Open-Source, Local)** and **OpenAI API (`gpt-transcribe`)**, and manage your optional OpenAI API key. Right after installation, OpenFlow launches automatically and asks whether you want to start immediately with local **Parakeet v3** or configure an **OpenAI API key**.
+- **Settings**: Lets you switch anytime between **Parakeet v3 (Open-Source, Local)** and **OpenAI API (`gpt-transcribe`)**, and manage your optional OpenAI API key. Right after installation, OpenFlow checks whether the **Parakeet v3** model is already installed—if not, it shows a dedicated **`Installing open-source STT model`** progress window in MB before launching the UI with the onboarding prompt.
 
 ---
 

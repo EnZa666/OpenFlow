@@ -11,7 +11,7 @@ const state = {
   desk: null,
   view: "dictate",
   editor: null,
-  renamingId: null,
+  confirmDeleteId: null,
   askKey: false,
   onboardingStep: null,
 };
@@ -46,7 +46,8 @@ function minutes(durationMs) {
 function captureEditor() {
   if (!state.editor) return;
   const editor = document.querySelector("#editor");
-  if (!editor || editor.dataset.id !== state.editor.id) return;
+  const expectedKey = state.editor.id || "__draft__";
+  if (!editor || editor.dataset.id !== expectedKey) return;
   const title = editor.querySelector("#editor-title");
   const body = editor.querySelector("#editor-body");
   if (!title || !body) return;
@@ -57,13 +58,6 @@ async function load(pending) {
   const generation = loadGeneration + 1;
   loadGeneration = generation;
   captureEditor();
-  if (pending && pending.openPadId && state.editor && state.editor.id !== pending.openPadId) {
-    await window.openflow.dispatch("pads.save", {
-      id: state.editor.id,
-      title: state.editor.title,
-      content: state.editor.content,
-    });
-  }
   const desk = await window.openflow.dispatch("desk.snapshot");
   if (generation !== loadGeneration) return;
   state.desk = desk;
@@ -73,13 +67,20 @@ async function load(pending) {
   } else {
     state.onboardingStep = null;
   }
-  if (pending && pending.openPadId) {
+  if (pending && pending.newDraftPad) {
+    state.view = "notes";
+    state.askKey = false;
+    state.confirmDeleteId = null;
+    state.editor = { id: "", isDraft: true, title: "Note", content: "" };
+    const editor = document.querySelector("#editor");
+    if (editor) editor.dataset.id = "";
+  } else if (pending && pending.openPadId) {
     const pad = (desk.pads || []).find((row) => row.id === pending.openPadId);
     if (pad) {
       state.view = "notes";
       state.askKey = false;
-      state.renamingId = null;
-      state.editor = { id: pad.id, title: pad.title || "Note", content: pad.content || "" };
+      state.confirmDeleteId = null;
+      state.editor = { id: pad.id, isDraft: false, title: pad.title || "Note", content: pad.content || "" };
       const editor = document.querySelector("#editor");
       if (editor) editor.dataset.id = "";
     }
@@ -126,6 +127,7 @@ function render() {
   }
   paintEditor();
   paintOnboarding();
+  paintConfirmModal();
 
   const key = view.querySelector("#api-key");
   if (key) {
@@ -140,13 +142,6 @@ function render() {
   const saveKeyBtn = view.querySelector("#save-key");
   if (saveKeyBtn) {
     saveKeyBtn.addEventListener("click", saveApiKey);
-  }
-  if (state.renamingId && state.view === "notes" && !showingEditor) {
-    const renameInput = view.querySelector(".note-rename-input");
-    if (renameInput) {
-      renameInput.focus();
-      renameInput.select();
-    }
   }
 }
 
@@ -173,14 +168,11 @@ function notesHtml() {
   const pads = [...(state.desk.pads || [])].reverse();
   const toolbar = `<div class="notes-toolbar"><button type="button" class="text-button" data-new-pad>+ New Note</button></div>`;
   if (!pads.length) return `${toolbar}<p class="empty">No notes yet. Click "+ New Note" or dictate without a focused text field.</p>`;
-  const pencilSvg = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.2 2.5 13.5 4.8 6 12.3H3.7V10z"></path></svg>';
+  const trashSvg = '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M3.5 5h11M7 5V3.6c0-.6.5-1.1 1.1-1.1h1.8c.6 0 1.1.5 1.1 1.1V5M5.2 5l.6 9.4c.05.9.8 1.6 1.7 1.6h3c.9 0 1.65-.7 1.7-1.6L12.8 5M7.6 8.2v4.5M10.4 8.2v4.5"></path></svg>';
   const list = `<div class="notes-list" role="list">${pads.map((pad) => {
     const title = pad.title || "Note";
     const preview = String(pad.content || "").trim().replace(/\s+/g, " ") || "Empty note — click to edit";
-    if (state.renamingId === pad.id) {
-      return `<div class="note-box" role="listitem"><button type="button" class="note-rename-btn" data-pad-rename-save="${esc(pad.id)}" title="Save title" aria-label="Save title">✓</button><div class="note-rename-form"><input class="note-rename-input" data-rename-input="${esc(pad.id)}" value="${esc(title)}" aria-label="Note title"><button type="button" class="btn-secondary" data-pad-rename-save="${esc(pad.id)}">Save</button></div><button type="button" class="note-delete-btn" data-pad-delete="${esc(pad.id)}" aria-label="Delete">×</button></div>`;
-    }
-    return `<div class="note-box" role="listitem"><button type="button" class="note-rename-btn" data-pad-rename="${esc(pad.id)}" title="Rename note" aria-label="Rename">${pencilSvg}</button><button type="button" class="note-open-btn" data-pad-open="${esc(pad.id)}"><strong>${esc(title)}</strong><span>${esc(preview)}</span></button><button type="button" class="note-delete-btn" data-pad-delete="${esc(pad.id)}" aria-label="Delete">×</button></div>`;
+    return `<div class="note-box" role="listitem"><button type="button" class="note-open-btn" data-pad-open="${esc(pad.id)}"><strong>${esc(title)}</strong><span>${esc(preview)}</span></button><button type="button" class="note-delete-btn" data-pad-delete="${esc(pad.id)}" title="Delete note" aria-label="Delete note">${trashSvg}</button></div>`;
   }).join("")}</div>`;
   return `${toolbar}${list}`;
 }
@@ -233,13 +225,14 @@ function paintEditor() {
     editor.dataset.id = "";
     return;
   }
-  if (editor.dataset.id === state.editor.id && editor.querySelector("#editor-title")) {
+  const editorKey = state.editor.id || "__draft__";
+  if (editor.dataset.id === editorKey && editor.querySelector("#editor-title")) {
     editor.hidden = false;
     return;
   }
-  editor.dataset.id = state.editor.id;
+  editor.dataset.id = editorKey;
   editor.hidden = false;
-  editor.innerHTML = `<div class="editor-bar"><button type="button" id="editor-back">← Back</button><div class="editor-actions"><span id="editor-feedback" class="save-badge" aria-live="polite">Saved ✓</span><button type="button" id="editor-save">Save</button></div></div><input id="editor-title" value="${esc(state.editor.title || "")}" placeholder="Note title" aria-label="Title"><textarea id="editor-body" placeholder="Write or paste your note..." aria-label="Note">${esc(state.editor.content || "")}</textarea>`;
+  editor.innerHTML = `<div class="editor-bar"><button type="button" id="editor-back">Back</button><div class="editor-actions"><span id="editor-feedback" class="save-badge" aria-live="polite">Saved ✓</span><button type="button" id="editor-save">Save</button></div></div><input id="editor-title" value="${esc(state.editor.title || "")}" placeholder="Note title" aria-label="Title"><textarea id="editor-body" placeholder="Write or paste your note..." aria-label="Note">${esc(state.editor.content || "")}</textarea>`;
   const body = editor.querySelector("#editor-body");
   if (body) body.focus();
 }
@@ -254,7 +247,7 @@ function paintOnboarding() {
   }
   host.hidden = false;
   if (state.onboardingStep === "apikey") {
-    host.innerHTML = `<div class="onboarding-card" role="dialog" aria-modal="true"><div><h2>Enter OpenAI API Key</h2><p class="sub">Enter your OpenAI API key to start dictating with gpt-transcribe.</p></div><div class="key-row"><input id="onboard-api-key" class="onboard-input" type="password" autocomplete="off" spellcheck="false" placeholder="sk-..."></div><div class="onboarding-actions"><button type="button" class="btn-secondary" data-onboard-back>← Back</button><button type="button" class="btn-primary" data-onboard-save-key>Save & Start</button></div></div>`;
+    host.innerHTML = `<div class="onboarding-card" role="dialog" aria-modal="true"><div><h2>Enter OpenAI API Key</h2><p class="sub">Enter your OpenAI API key to start dictating with gpt-transcribe.</p></div><div class="key-row"><input id="onboard-api-key" class="onboard-input" type="password" autocomplete="off" spellcheck="false" placeholder="sk-..."></div><div class="onboarding-actions"><button type="button" class="btn-secondary" data-onboard-back>Back</button><button type="button" class="btn-primary" data-onboard-save-key>Save & Start</button></div></div>`;
     const input = host.querySelector("#onboard-api-key");
     if (input) input.focus();
     return;
@@ -262,21 +255,18 @@ function paintOnboarding() {
   host.innerHTML = `<div class="onboarding-card" role="dialog" aria-modal="true"><div><h2>Welcome to OpenFlow</h2><p class="sub">Choose how you want to transcribe your voice. You can change this anytime in Settings.</p></div><div class="onboarding-choices"><button type="button" class="onboarding-choice" data-onboard-choose="parakeet"><strong><span>Parakeet v3 (Local Open-Source)</span><span class="engine-badge ready">Recommended · Free</span></strong><span>Installed with OpenFlow. Runs locally on your PC in the background — start immediately without an API key.</span></button><button type="button" class="onboarding-choice" data-onboard-choose="openai"><strong><span>OpenAI API (gpt-transcribe)</span><span class="engine-badge">Cloud API</span></strong><span>Transcribe in the cloud using your own OpenAI API key.</span></button></div></div>`;
 }
 
-async function commitInlineRename(padId) {
-  const input = document.querySelector(`[data-rename-input="${padId}"]`);
-  const pad = (state.desk && state.desk.pads || []).find((row) => row.id === padId);
-  state.renamingId = null;
-  if (!pad) {
-    render();
+function paintConfirmModal() {
+  const host = document.querySelector("#confirm-modal");
+  if (!host) return;
+  if (!state.confirmDeleteId) {
+    host.hidden = true;
+    host.innerHTML = "";
     return;
   }
-  const nextTitle = input && input.value.trim() ? input.value.trim() : (pad.title || "Note");
-  await window.openflow.dispatch("pads.save", {
-    id: pad.id,
-    title: nextTitle,
-    content: pad.content || "",
-  });
-  await load();
+  const pad = (state.desk && state.desk.pads || []).find((row) => row.id === state.confirmDeleteId);
+  const title = pad && pad.title ? pad.title : "this note";
+  host.hidden = false;
+  host.innerHTML = `<div class="onboarding-card" role="dialog" aria-modal="true"><div><h2>Delete Note?</h2><p class="sub">Are you sure you want to delete "${esc(title)}"? This action cannot be undone.</p></div><div class="onboarding-actions"><button type="button" class="btn-secondary" data-confirm-cancel>Cancel</button><button type="button" class="btn-danger" data-confirm-delete>Delete</button></div></div>`;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -285,7 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!button) return;
     state.view = button.dataset.nav;
     state.editor = null;
-    state.renamingId = null;
+    state.confirmDeleteId = null;
     if (state.view === "notes" || state.view === "usage" || state.view === "settings") load().catch(() => {});
     else render();
   });
@@ -310,36 +300,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const created = event.target.closest("[data-new-pad]");
     if (created) {
-      const pad = await window.openflow.dispatch("pads.save", { title: "Note", content: "" });
       state.view = "notes";
-      state.renamingId = null;
-      state.editor = { id: pad.id, title: pad.title || "Note", content: pad.content || "" };
+      state.confirmDeleteId = null;
+      state.editor = { id: "", isDraft: true, title: "Note", content: "" };
       const editor = document.querySelector("#editor");
       if (editor) editor.dataset.id = "";
-      await load();
-      return;
-    }
-
-    const renameBtn = event.target.closest("[data-pad-rename]");
-    if (renameBtn) {
-      state.renamingId = renameBtn.dataset.padRename;
       render();
-      return;
-    }
-
-    const renameSaveBtn = event.target.closest("[data-pad-rename-save]");
-    if (renameSaveBtn) {
-      await commitInlineRename(renameSaveBtn.dataset.padRenameSave);
       return;
     }
 
     const remove = event.target.closest("[data-pad-delete]");
     if (remove) {
-      const deletingId = remove.dataset.padDelete;
-      if (state.editor && state.editor.id === deletingId) state.editor = null;
-      if (state.renamingId === deletingId) state.renamingId = null;
-      await window.openflow.dispatch("pads.delete", { id: deletingId });
-      await load();
+      state.confirmDeleteId = remove.dataset.padDelete;
+      paintConfirmModal();
       return;
     }
 
@@ -347,24 +320,26 @@ document.addEventListener("DOMContentLoaded", () => {
     if (open) {
       const pad = (state.desk.pads || []).find((item) => item.id === open.dataset.padOpen);
       if (!pad) return;
-      state.renamingId = null;
-      state.editor = { id: pad.id, title: pad.title || "Note", content: pad.content || "" };
+      state.confirmDeleteId = null;
+      state.editor = { id: pad.id, isDraft: false, title: pad.title || "Note", content: pad.content || "" };
       const editor = document.querySelector("#editor");
       if (editor) editor.dataset.id = "";
       render();
     }
   });
 
-  document.querySelector("#view").addEventListener("keydown", async (event) => {
-    const renameInput = event.target.closest("[data-rename-input]");
-    if (!renameInput) return;
-    if (event.key === "Enter") {
-      event.preventDefault();
-      await commitInlineRename(renameInput.dataset.renameInput);
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      state.renamingId = null;
-      render();
+  document.querySelector("#confirm-modal").addEventListener("click", async (event) => {
+    if (event.target.closest("[data-confirm-cancel]") || event.target === document.querySelector("#confirm-modal")) {
+      state.confirmDeleteId = null;
+      paintConfirmModal();
+      return;
+    }
+    if (event.target.closest("[data-confirm-delete]") && state.confirmDeleteId) {
+      const deletingId = state.confirmDeleteId;
+      state.confirmDeleteId = null;
+      if (state.editor && state.editor.id === deletingId) state.editor = null;
+      await window.openflow.dispatch("pads.delete", { id: deletingId });
+      await load();
     }
   });
 
@@ -381,19 +356,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const feedback = document.querySelector("#editor-feedback");
     const nextTitle = (title && title.value.trim()) ? title.value.trim() : "Note";
     const nextContent = body ? body.value : state.editor.content;
-    state.editor = { ...state.editor, title: nextTitle, content: nextContent };
     button.disabled = true;
     button.textContent = "Saved ✓";
     button.classList.add("saved");
     if (feedback) feedback.classList.add("visible");
-    await window.openflow.dispatch("pads.save", {
-      id: state.editor.id,
+    const saved = await window.openflow.dispatch("pads.save", {
+      id: state.editor.id || undefined,
       title: nextTitle,
       content: nextContent,
     });
+    state.editor = { id: saved.id, isDraft: false, title: nextTitle, content: nextContent };
     await new Promise((resolve) => setTimeout(resolve, 260));
     state.editor = null;
     await load();
+  });
+
+  document.querySelector("#editor").addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+      event.preventDefault();
+      const saveBtn = document.querySelector("#editor-save");
+      if (saveBtn && !saveBtn.disabled) saveBtn.click();
+    }
   });
 
   document.querySelector("#onboarding").addEventListener("click", async (event) => {

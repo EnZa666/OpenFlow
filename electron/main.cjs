@@ -273,9 +273,58 @@ function showNotePad(id) {
 }
 
 function openFreshNote() {
-  const created = store.savePad({ title: "Note", content: "" });
-  showMain({ openPadId: created.id });
-  return created;
+  showMain({ newDraftPad: true });
+  return { id: "", isDraft: true, title: "Note", content: "" };
+}
+
+async function runModelInstallerIfNeeded() {
+  const userData = app.getPath("userData");
+  if (process.env.OPENFLOW_SMOKE === "1" || parakeet.isModelInstalled(userData)) {
+    return;
+  }
+  const win = new BrowserWindow({
+    width: 480,
+    height: 230,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    closable: false,
+    center: true,
+    show: false,
+    title: "Installing open-source STT model",
+    icon: path.join(root, "build", "icon.png"),
+    backgroundColor: "#faf9f7",
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.cjs"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+  await win.loadFile(path.join(root, "renderer", "model-install.html"));
+  if (!win.isDestroyed()) {
+    win.show();
+    win.focus();
+  }
+  try {
+    await parakeet.ensureModelFiles(userData, (progress) => {
+      if (!win.isDestroyed()) {
+        win.webContents.send("model-install-progress", progress);
+      }
+    });
+  } catch (error) {
+    if (!win.isDestroyed()) {
+      win.webContents.send("model-install-progress", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      await delay(1800);
+    }
+  } finally {
+    if (!win.isDestroyed()) {
+      win.destroy();
+    }
+  }
 }
 
 function pipeName() {
@@ -1225,6 +1274,7 @@ if (!gotLock) {
       session.defaultSession.setDevicePermissionHandler((details) => details.deviceType === "microphone" || details.deviceType === "audio");
     }
     store = createStore(path.join(app.getPath("userData"), "openflow.json"));
+    await runModelInstallerIfNeeded();
     syncSttEngine();
     createWindows();
     createTray();

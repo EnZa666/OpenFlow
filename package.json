@@ -38,10 +38,6 @@
       {
         "from": "vendor/flameshot/flameshot-14.0.0-win64",
         "to": "flameshot"
-      },
-      {
-        "from": "vendor/parakeet-tdt-0.6b-v3",
-        "to": "parakeet-tdt-0.6b-v3"
       }
     ],
     "win": {

@@ -338,35 +338,6 @@ h1 {
   box-shadow: var(--shadow-sm);
 }
 
-.note-rename-btn {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  border-radius: 9px;
-  background: var(--soft);
-  border: 1px solid var(--line);
-  color: var(--vast-800);
-  display: grid;
-  place-items: center;
-  transition: background-color .14s ease, color .14s ease, border-color .14s ease;
-}
-
-.note-rename-btn:hover {
-  background: var(--line);
-  color: var(--fg);
-  border-color: var(--sand-700);
-}
-
-.note-rename-btn svg {
-  width: 14px;
-  height: 14px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.75;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
 .note-open-btn {
   flex: 1;
   min-width: 0;
@@ -395,42 +366,50 @@ h1 {
   white-space: nowrap;
 }
 
-.note-rename-form {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.note-rename-input {
-  flex: 1;
-  min-width: 0;
-  border: 1px solid var(--fg);
-  background: var(--bg);
-  border-radius: 9px;
-  padding: 6px 10px;
-  font-size: 13.5px;
-  font-weight: 600;
-  outline: none;
-}
-
 .note-delete-btn {
-  width: 28px;
-  height: 28px;
-  flex: 0 0 28px;
-  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 10px;
   color: var(--muted);
-  font-size: 16px;
-  line-height: 1;
   display: grid;
   place-items: center;
   transition: background-color .14s ease, color .14s ease;
 }
 
+.note-delete-btn svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.05;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .note-delete-btn:hover {
-  background: var(--soft);
-  color: var(--fg);
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #dc2626;
+  color: #ffffff;
+  border: 1px solid #dc2626;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--shadow-xs);
+  transition: opacity .14s ease;
+}
+
+.btn-danger:hover {
+  opacity: 0.92;
 }
 
 .empty {

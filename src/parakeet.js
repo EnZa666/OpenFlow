@@ -7,14 +7,16 @@ const os = require("node:os");
 const MODEL_ID = "parakeet-tdt-0.6b-v3";
 const HF_BASE = "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/resolve/main";
 const REQUIRED_FILES = [
-  { name: "tokens.txt", minBytes: 1000 },
-  { name: "joiner.int8.onnx", minBytes: 1000000 },
-  { name: "decoder.int8.onnx", minBytes: 1000000 },
-  { name: "encoder.int8.onnx", minBytes: 100000000 },
+  { name: "tokens.txt", minBytes: 1000, expectedBytes: 93939 },
+  { name: "joiner.int8.onnx", minBytes: 1000000, expectedBytes: 6355277 },
+  { name: "decoder.int8.onnx", minBytes: 1000000, expectedBytes: 11845275 },
+  { name: "encoder.int8.onnx", minBytes: 100000000, expectedBytes: 652184281 },
 ];
+const TOTAL_EXPECTED_BYTES = REQUIRED_FILES.reduce((sum, file) => sum + file.expectedBytes, 0);
 
 let recognizer = null;
 let loadPromise = null;
+let installPromise = null;
 let engineState = "stopped";
 let lastError = "";
 let activeModelDir = "";
@@ -33,28 +35,22 @@ function dirHasModel(dir) {
 }
 
 function resolveModelDir(userDataPath) {
-  const candidates = [];
-  if (process.resourcesPath) {
-    candidates.push(path.join(process.resourcesPath, MODEL_ID));
-    candidates.push(path.join(process.resourcesPath, "models", MODEL_ID));
-  }
-  candidates.push(path.join(__dirname, "..", "vendor", MODEL_ID));
   if (userDataPath) {
-    candidates.push(path.join(userDataPath, "models", MODEL_ID));
+    return path.join(userDataPath, "models", MODEL_ID);
   }
-  for (const dir of candidates) {
-    if (dirHasModel(dir)) return dir;
-  }
-  return userDataPath
-    ? path.join(userDataPath, "models", MODEL_ID)
-    : path.join(__dirname, "..", "vendor", MODEL_ID);
+  return path.join(__dirname, "..", "vendor", MODEL_ID);
 }
 
-async function downloadFile(url, destPath) {
+function isModelInstalled(userDataPath) {
+  return dirHasModel(resolveModelDir(userDataPath));
+}
+
+async function downloadFile(url, destPath, onChunkBytes) {
   const res = await fetch(url, { redirect: "follow" });
   if (!res.ok || !res.body) {
     throw new Error(`Failed to download ${path.basename(destPath)} (${res.status})`);
   }
+  const contentLength = Number(res.headers.get("content-length")) || 0;
   const tmpPath = `${destPath}.${process.pid}.part`;
   const fileStream = fs.createWriteStream(tmpPath);
   const reader = res.body.getReader();
@@ -63,6 +59,9 @@ async function downloadFile(url, destPath) {
       const { done, value } = await reader.read();
       if (done) break;
       if (value && value.byteLength) {
+        if (typeof onChunkBytes === "function") {
+          onChunkBytes(value.byteLength, contentLength);
+        }
         if (!fileStream.write(Buffer.from(value))) {
           await new Promise((resolve) => fileStream.once("drain", resolve));
         }
@@ -79,22 +78,88 @@ async function downloadFile(url, destPath) {
   }
 }
 
-async function ensureModelFiles(userDataPath) {
+async function ensureModelFiles(userDataPath, onProgress) {
   const dir = resolveModelDir(userDataPath);
-  if (dirHasModel(dir)) return dir;
+  if (dirHasModel(dir)) {
+    if (typeof onProgress === "function") {
+      const totalMb = Number((TOTAL_EXPECTED_BYTES / (1024 * 1024)).toFixed(1));
+      onProgress({
+        downloadedBytes: TOTAL_EXPECTED_BYTES,
+        totalBytes: TOTAL_EXPECTED_BYTES,
+        downloadedMb: totalMb,
+        totalMb,
+        percent: 100,
+        done: true,
+      });
+    }
+    return dir;
+  }
+
   engineState = "installing";
   fs.mkdirSync(dir, { recursive: true });
+
+  let completedBytes = 0;
+  const totalBytes = TOTAL_EXPECTED_BYTES;
+  const report = (extraBytes = 0, currentFile = "") => {
+    if (typeof onProgress !== "function") return;
+    const current = Math.min(totalBytes, completedBytes + extraBytes);
+    const downloadedMb = Number((current / (1024 * 1024)).toFixed(1));
+    const totalMb = Number((totalBytes / (1024 * 1024)).toFixed(1));
+    const percent = Math.max(0, Math.min(100, Math.round((current / totalBytes) * 100)));
+    onProgress({
+      downloadedBytes: current,
+      totalBytes,
+      downloadedMb,
+      totalMb,
+      percent,
+      currentFile,
+      done: false,
+    });
+  };
+
+  report(0, "");
+
   for (const file of REQUIRED_FILES) {
     const full = path.join(dir, file.name);
+    let existingSize = 0;
     let valid = false;
     try {
-      valid = fs.existsSync(full) && fs.statSync(full).size >= file.minBytes;
+      if (fs.existsSync(full)) {
+        existingSize = fs.statSync(full).size;
+        valid = existingSize >= file.minBytes;
+      }
     } catch {
       valid = false;
     }
-    if (!valid) {
-      await downloadFile(`${HF_BASE}/${file.name}`, full);
+    if (valid) {
+      completedBytes += file.expectedBytes;
+      report(0, file.name);
+      continue;
     }
+    let fileDownloaded = 0;
+    let lastEmit = 0;
+    await downloadFile(`${HF_BASE}/${file.name}`, full, (chunkLen) => {
+      fileDownloaded += chunkLen;
+      const now = Date.now();
+      if (now - lastEmit >= 60) {
+        lastEmit = now;
+        report(fileDownloaded, file.name);
+      }
+    });
+    completedBytes += file.expectedBytes;
+    report(0, file.name);
+  }
+
+  if (typeof onProgress === "function") {
+    const totalMb = Number((totalBytes / (1024 * 1024)).toFixed(1));
+    onProgress({
+      downloadedBytes: totalBytes,
+      totalBytes,
+      downloadedMb: totalMb,
+      totalMb,
+      percent: 100,
+      done: true,
+    });
   }
   return dir;
 }
@@ -225,8 +290,10 @@ function getStatus(userDataPath) {
 
 module.exports = {
   MODEL_ID,
+  TOTAL_EXPECTED_BYTES,
   resolveModelDir,
   dirHasModel,
+  isModelInstalled,
   ensureModelFiles,
   decodeWavPcm16,
   startBackground,
