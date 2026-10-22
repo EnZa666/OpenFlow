@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    :root {
+      --sand-50: #fcfcfb;
+      --sand-500: #f5f4f0;
+      --sand-600: #eeebe3;
+      --vast-950: #1a1a1a;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--sand-500); color: var(--vast-950); font-family: "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    body { width: 1100px; height: 580px; overflow: hidden; display: grid; place-items: center; padding: 28px; }
+    .map { display: grid; grid-template-columns: 190px 36px 190px 36px 320px; align-items: center; }
+    .root, .branch, .leaf { border: 1px solid var(--sand-600); border-radius: 14px; padding: 10px 14px; background: var(--sand-50); box-shadow: 0 2px 6px rgba(26,26,26,.05); }
+    .root { font-family: Georgia, serif; font-size: 28px; text-align: center; background: var(--vast-950); color: var(--sand-50); border-color: var(--vast-950); padding: 16px 20px; }
+    .col { display: grid; gap: 26px; }
+    .branch { font-weight: 650; text-align: center; font-size: 15px; }
+    .leaves { display: grid; gap: 8px; }
+    .leaf { font-size: 13.5px; color: #30302f; }
+    .conn { height: 2px; background: #c5c0b3; width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="map">
+    <div class="root">OpenFlow</div>
+    <div class="conn"></div>
+    <div class="col">
+      <div class="branch">Floating Bubble</div>
+      <div class="branch">Desktop Window</div>
+      <div class="branch">STT Engine</div>
+    </div>
+    <div class="conn"></div>
+    <div class="col">
+      <div class="leaves">
+        <div class="leaf">microphone — Start / stop voice capture</div>
+        <div class="leaf">notes — Open fresh equal-width note tab</div>
+        <div class="leaf">polish — Style &amp; prompt options</div>
+        <div class="leaf">screenshot — Bundled Flameshot capture</div>
+      </div>
+      <div class="leaves">
+        <div class="leaf">Dictation — Shortcut card &amp; recent transcripts</div>
+        <div class="leaf">Notes — Equal-width tabs &amp; live Save feedback</div>
+        <div class="leaf">Usage — 30-day minutes, words &amp; cost chart</div>
+        <div class="leaf">Settings — Local API key prompt on startup</div>
+      </div>
+      <div class="leaves">
+        <div class="leaf">16 kHz mono WAV slice streaming</div>
+        <div class="leaf">OpenAI gpt-transcribe recognition</div>
+        <div class="leaf">Auto-paste via Ctrl+V or auto-open Note tab</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

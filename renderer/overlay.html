@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>OpenFlow</title>
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; overflow: visible; background: transparent; color: #fff; font-family: "Segoe UI", system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    [hidden] { display: none !important; }
+    ::-webkit-scrollbar { display: none; width: 0; height: 0; }
+    body { display: flex; align-items: flex-end; justify-content: center; }
+    .stack { display: grid; justify-items: center; align-items: end; gap: 6px; padding-bottom: 2px; }
+    .menu { box-sizing: border-box; width: 280px; background: #fcfcfb; color: #1a1a1a; border-radius: 16px; padding: 6px; border: 1px solid #eeebe3; box-shadow: 0 12px 36px rgba(26,26,26,.16); }
+    .menu.future { opacity: 0.45; }
+    .menu.future button, .menu.future label, .menu.future input { pointer-events: none; }
+    .row, .menu label { box-sizing: border-box; display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; background: transparent; border: 0; color: inherit; font: inherit; font-size: 13.5px; text-align: left; padding: 8px 10px; border-radius: 10px; }
+    .menu button { cursor: default; }
+    .mark { width: 14px; height: 14px; }
+    button[aria-checked="true"] .mark { border-right: 1.6px solid #1a1a1a; border-bottom: 1.6px solid #1a1a1a; width: 5px; height: 9px; transform: rotate(45deg); margin-right: 4px; }
+    .switch { width: 32px; height: 18px; border-radius: 99px; background: #e4e2dc; position: relative; display: inline-block; flex: 0 0 32px; }
+    .switch i { position: absolute; width: 14px; height: 14px; border-radius: 99px; background: #fff; top: 2px; left: 2px; }
+    input:checked + .switch { background: #1a1a1a; }
+    input:checked + .switch i { left: 16px; }
+    .check { position: absolute; opacity: 0; pointer-events: none; }
+    #grip { width: 72px; height: 18px; padding: 0; border: 0; border-radius: 999px; background: #1a1a1a; position: relative; cursor: pointer; display: block; box-shadow: 0 2px 8px rgba(0,0,0,.22); }
+    #grip span { position: absolute; top: 3px; left: 18px; width: 36px; height: 2px; border-radius: 2px; background: #fff; display: block; }
+    .pill { position: relative; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 4px; width: 144px; height: 36px; padding: 3px; background: #1a1a1a; color: #fff; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,.24); }
+    .pill button { position: relative; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 999px; background: transparent; color: #fff; display: grid; place-items: center; cursor: pointer; transition: background-color .14s ease, transform .14s ease; }
+    .pill button:hover { background: #30302f; }
+    .pill button[aria-pressed="true"] { background: #30302f; }
+    .pill button::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 9px);
+      left: 50%;
+      transform: translateX(-50%) translateY(3px);
+      background: #1a1a1a;
+      color: #fcfcfb;
+      font-size: 11.5px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      padding: 4px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.12);
+      transition: opacity .14s ease, transform .14s ease;
+    }
+    .pill button:hover::after, .pill button:focus-visible::after {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .status { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+    body[data-mode="listening"] .pill, body[data-mode="working"] .pill { width: 72px; height: 18px; padding: 0 16px; }
+    body[data-mode="listening"] .pill button, body[data-mode="working"] .pill button { display: none !important; }
+    body[data-mode="listening"] #status, body[data-mode="working"] #status { display: flex !important; }
+    .spin { width: 10px; height: 10px; box-sizing: border-box; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.28); border-top-color: #fff; animation: ofspin .7s linear infinite; }
+    @keyframes ofspin { to { transform: rotate(360deg); } }
+    .eq { display: flex; align-items: flex-end; justify-content: center; gap: 3px; height: 14px; }
+    .eq i { width: 2px; height: 3px; background: #fff; display: block; border-radius: 2px; }
+    body.speaking .eq i { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+    @media (prefers-reduced-motion: reduce) {
+      .eq i { transition: none; }
+      .spin { animation: none; border-color: #fff; }
+    }
+    svg { display: block; }
+  </style>
+</head>
+<body data-mode="idle" data-near="false">
+  <div class="stack">
+    <div id="menu" class="menu future" hidden aria-disabled="true">
+      <div id="choices">
+        <label class="row">Automatic <input id="auto" class="check" type="checkbox" tabindex="-1"><span class="switch" aria-hidden="true"><i></i></span></label>
+        <button class="row" type="button" tabindex="-1" data-kind="polish">Polish <span class="mark"></span></button>
+        <button class="row" type="button" tabindex="-1" data-kind="prompt">Engineer <span class="mark"></span></button>
+        <button class="row" id="config" type="button" tabindex="-1">Customize</button>
+      </div>
+      <div id="styles">
+        <button class="row" type="button" tabindex="-1" data-style="concise">Concise <span class="mark"></span></button>
+        <button class="row" type="button" tabindex="-1" data-style="clarity">Clarity <span class="mark"></span></button>
+        <button class="row" type="button" tabindex="-1" data-style="reorder">Reorder <span class="mark"></span></button>
+        <button class="row" type="button" tabindex="-1" data-style="structure">Structure <span class="mark"></span></button>
+        <button class="row" type="button" tabindex="-1" data-style="tone">Tone <span class="mark"></span></button>
+      </div>
+    </div>
+    <button id="grip" type="button" aria-label="OpenFlow"><span></span></button>
+    <div class="pill" id="pill" hidden>
+      <button id="mic" type="button" aria-label="microphone" data-tooltip="microphone">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg>
+      </button>
+      <button id="note" type="button" aria-label="notes" data-tooltip="notes">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.75" y="2.25" width="10.5" height="13.5" rx="1.6"></rect><path d="M6.25 6.75h5.5M6.25 10h5.5"></path></svg>
+      </button>
+      <button id="tune" type="button" aria-label="polish" data-tooltip="polish">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 3.1 14.9 7.4 7.2 15.1H2.9v-4.3z"></path></svg>
+      </button>
+      <button id="shot" type="button" aria-label="screenshot" data-tooltip="screenshot">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 6.4V3.2H6.4M11.6 3.2h3.2v3.2M14.8 11.6v3.2h-3.2M6.4 14.8H3.2v-3.2"></path><circle cx="9" cy="9" r="1.7"></circle></svg>
+      </button>
+      <div id="status" class="status" hidden>
+        <div class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div id="spin" class="spin" hidden></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const menu = document.querySelector("#menu");
+    const choices = document.querySelector("#choices");
+    const styles = document.querySelector("#styles");
+    const note = document.querySelector("#note");
+    const tune = document.querySelector("#tune");
+    const shot = document.querySelector("#shot");
+    const status = document.querySelector("#status");
+    const mic = document.querySelector("#mic");
+    const grip = document.querySelector("#grip");
+    const pill = document.querySelector("#pill");
+    let mode = "idle";
+    let near = false;
+    let menuOpen = false;
+    let fromSymbol = false;
+    let settleNear = false;
+    let armed = false;
+    let kind = "polish";
+    let polishStyle = "clarity";
+    let uiGen = 0;
+    let micRepaired = false;
+    let capture = null;
+    let activeBucket = null;
+    let closingBucket = null;
+    let micQueue = Promise.resolve();
+    let placedW = 0;
+    let placedH = 0;
+    const clips = {
+      start: new Audio("sounds/listen-start.wav"),
+      done: new Audio("sounds/done.wav"),
+      error: new Audio("sounds/error.wav"),
+    };
+
+    function play(name) {
+      const clip = clips[name];
+      if (!clip) return;
+      clip.currentTime = 0;
+      clip.play().catch(() => {});
+    }
+
+    function layout() {
+      let width = 72;
+      let height = 18;
+      if (mode !== "listening" && mode !== "working" && near) {
+        width = menuOpen ? 300 : 180;
+        height = menuOpen ? 440 : 76;
+      }
+      document.body.dataset.mode = mode;
+      document.body.dataset.near = near ? "true" : "false";
+      if (width === placedW && height === placedH) return;
+      placedW = width;
+      placedH = height;
+      if (window.openflow) window.openflow.dispatch("bar.mode", { width, height });
+    }
+
+    function paint() {
+      const busy = mode === "listening" || mode === "working";
+      const open = near && !busy;
+      grip.hidden = open || busy;
+      pill.hidden = !open && !busy;
+      note.hidden = !open;
+      tune.hidden = !open;
+      shot.hidden = !open;
+      mic.hidden = !open;
+      status.hidden = !busy;
+      document.querySelector(".eq").hidden = mode !== "listening";
+      document.querySelector("#spin").hidden = mode !== "working";
+      menu.hidden = !open || !menuOpen;
+      choices.hidden = false;
+      styles.hidden = false;
+      mic.setAttribute("aria-pressed", mode === "listening" ? "true" : "false");
+      tune.setAttribute("aria-pressed", menuOpen ? "true" : "false");
+      document.querySelectorAll("[data-kind]").forEach((button) => {
+        button.setAttribute("aria-checked", button.dataset.kind === kind ? "true" : "false");
+      });
+      document.querySelectorAll("[data-style]").forEach((button) => {
+        button.setAttribute("aria-checked", button.dataset.style === polishStyle ? "true" : "false");
+      });
+      layout();
+    }
+
+    function enqueueMic(work) {
+      const run = micQueue.then(work, work);
+      micQueue = run.then(() => {}, () => {});
+      return run;
+    }
+
+    function mergeFrames(frames) {
+      let total = 0;
+      for (const frame of frames) total += frame.length;
+      const merged = new Float32Array(total);
+      let offset = 0;
+      for (const frame of frames) {
+        merged.set(frame, offset);
+        offset += frame.length;
+      }
+      return merged;
+    }
+
+    function markSpeaking(frame) {
+      let sum = 0;
+      let count = 0;
+      const step = Math.max(1, Math.floor(frame.length / 64));
+      for (let index = 0; index < frame.length; index += step) {
+        const sample = frame[index];
+        sum += sample * sample;
+        count += 1;
+      }
+      document.body.classList.toggle("speaking", count > 0 && Math.sqrt(sum / count) > 0.045);
+    }
+
+    function streamLive(current) {
+      return Boolean(current && current.stream && current.stream.getTracks().some((track) => track.readyState === "live"));
+    }
+
+    function releaseCapture() {
+      const current = capture;
+      if (!current) return;
+      capture = null;
+      if (current.meter) cancelAnimationFrame(current.meter);
+      try {
+        if (current.recorder && current.recorder.state === "recording") current.recorder.stop();
+      } catch (_error) {}
+      try { if (current.worklet) current.worklet.disconnect(); } catch (_error) {}
+      try { if (current.silent) current.silent.disconnect(); } catch (_error) {}
+      try { if (current.source) current.source.disconnect(); } catch (_error) {}
+      try { if (current.context) current.context.close(); } catch (_error) {}
+      current.stream.getTracks().forEach((track) => track.stop());
+    }
+
+    async function acquireStream() {
+      const strict = {
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          channelCount: 1,
+        },
+      };
+      try {
+        return await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (first) {
+        try {
+          return await navigator.mediaDevices.getUserMedia(strict);
+        } catch (_second) {
+          if (!micRepaired && window.openflow) {
+            micRepaired = true;
+            const repaired = await window.openflow.dispatch("mic.repair").catch(() => null);
+            if (repaired && repaired.changed) {
+              try {
+                return await navigator.mediaDevices.getUserMedia({ audio: true });
+              } catch (_again) {
+                return navigator.mediaDevices.getUserMedia(strict);
+              }
+            }
+          }
+          throw first;
+        }
+      }
+    }
+
+    async function loadWorklet(context) {
+      try {
+        await context.audioWorklet.addModule("capture-worklet.js");
+        return;
+      } catch (_error) {}
+      const response = await fetch("capture-worklet.js");
+      if (!response.ok) throw new Error("Capture worklet missing");
+      const sourceText = await response.text();
+      const url = URL.createObjectURL(new Blob([sourceText], { type: "text/javascript" }));
+      try {
+        await context.audioWorklet.addModule(url);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    function connectGraph() {
+      if (!capture || !capture.source || !capture.context) return;
+      try { capture.source.disconnect(); } catch (_error) {}
+      if (capture.worklet) {
+        try { capture.worklet.disconnect(); } catch (_error) {}
+      }
+      if (capture.silent) {
+        try { capture.silent.disconnect(); } catch (_error) {}
+      }
+      capture.source.connect(capture.analyser);
+      capture.analyser.connect(capture.silent);
+      capture.silent.connect(capture.context.destination);
+      if (capture.worklet) {
+        capture.source.connect(capture.worklet);
+        capture.worklet.connect(capture.silent);
+      }
+      watchAnalyser();
+    }
+
+    function disconnectGraph() {
+      if (!capture || capture.mediaFallback) return;
+      try { capture.worklet.disconnect(); } catch (_error) {}
+      try { capture.silent.disconnect(); } catch (_error) {}
+      try { capture.source.disconnect(); } catch (_error) {}
+    }
+
+    function onWorkletMessage(event) {
+      const data = event.data;
+      if (data === "done") {
+        if (capture && capture.onDone) {
+          const done = capture.onDone;
+          capture.onDone = null;
+          done();
+        }
+        return;
+      }
+      if (!data || typeof data === "string" || typeof data.length !== "number") return;
+      pushFrame(data);
+    }
+
+    function pushFrame(frame) {
+      const target = closingBucket || activeBucket;
+      if (!target) return;
+      const copy = frame instanceof Float32Array ? frame : Float32Array.from(frame);
+      target.frames.push(copy);
+      target.samples += copy.length;
+      if (armed && target === activeBucket) markSpeaking(copy);
+      const limit = capture && capture.flushAt ? capture.flushAt : 0;
+      if (!limit || target !== activeBucket || target.samples < limit) return;
+      const frames = target.frames;
+      target.frames = [];
+      target.samples = 0;
+      target.send = target.send.then(async () => {
+        if (target.error) return;
+        try {
+          await ship(target, frames);
+        } catch (error) {
+          target.error = error instanceof Error ? error : new Error(String(error));
+        }
+      });
+    }
+
+    async function ship(bucket, frames) {
+      if (!frames || !frames.length || !window.openflow) return;
+      const packed = await window.openflow.pack(mergeFrames(frames), bucket.rate, Boolean(bucket.token));
+      if (!bucket.token && (!packed || !packed.audible)) return;
+      if (!bucket.token) {
+        const session = await window.openflow.dispatch("speech.session");
+        bucket.token = session && session.token;
+        if (!bucket.token) throw new Error("Recording session expired.");
+      }
+      for (const slice of (packed && packed.slices) || []) {
+        const size = slice.byteLength || slice.length || 0;
+        if (size > 24 * 1024 * 1024) throw new Error("Recording is too large.");
+        const accepted = await window.openflow.dispatch("speech.part", {
+          token: bucket.token,
+          audio: slice,
+          mime: "audio/wav",
+          filename: "recording.wav",
+        });
+        if (accepted === false) return;
+      }
+    }
+
+    function watchAnalyser() {
+      if (!capture || !capture.analyser) return;
+      const data = new Uint8Array(capture.analyser.fftSize);
+      const tick = () => {
+        if (!armed || !capture || !capture.analyser) return;
+        capture.analyser.getByteTimeDomainData(data);
+        let sum = 0;
+        for (let index = 0; index < data.length; index += 1) {
+          const sample = (data[index] - 128) / 128;
+          sum += sample * sample;
+        }
+        const level = Math.sqrt(sum / data.length);
+        const hot = level > 0.02;
+        document.body.classList.toggle("speaking", hot);
+        const bars = document.querySelectorAll(".eq i");
+        bars.forEach((bar, index) => {
+          const shape = 0.72 + (index % 2) * 0.28;
+          const px = hot ? Math.max(4, Math.min(14, 3 + level * 110 * shape)) : 3;
+          bar.style.height = `${px}px`;
+        });
+        capture.meter = requestAnimationFrame(tick);
+      };
+      capture.meter = requestAnimationFrame(tick);
+    }
+
+    function startRecorder(bucket) {
+      const mime = typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : "";
+      const recorder = mime ? new MediaRecorder(capture.stream, { mimeType: mime }) : new MediaRecorder(capture.stream);
+      bucket.mime = recorder.mimeType || mime || "audio/webm";
+      bucket.blobs = [];
+      let bytes = 0;
+      recorder.addEventListener("dataavailable", (event) => {
+        if (!event.data || !event.data.size) return;
+        bytes += event.data.size;
+        bucket.blobs.push(event.data);
+        if (bytes > 24 * 1024 * 1024) bucket.error = new Error("Recording is too large.");
+      });
+      recorder.start(1000);
+      capture.recorder = recorder;
+    }
+
+    async function ensureCapture() {
+      if (streamLive(capture)) {
+        if (capture.context && capture.context.state === "suspended") await capture.context.resume().catch(() => {});
+        return capture;
+      }
+      releaseCapture();
+      const stream = await acquireStream();
+      const context = new AudioContext({ latencyHint: "interactive" });
+      if (context.state === "suspended") await context.resume().catch(() => {});
+      const rate = context.sampleRate || 48000;
+      const flushAt = window.openflow ? await window.openflow.flushSampleCount(rate) : 0;
+      const source = context.createMediaStreamSource(stream);
+      const analyser = context.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.35;
+      const silent = context.createGain();
+      silent.gain.value = 0;
+      const next = {
+        stream,
+        context,
+        source,
+        analyser,
+        silent,
+        rate,
+        flushAt: flushAt || Math.floor((15 * 1024 * 1024 / 2) * rate / 16000),
+        onDone: null,
+        meter: 0,
+      };
+      stream.getTracks().forEach((track) => {
+        track.addEventListener("ended", () => {
+          if (capture === next) releaseCapture();
+        });
+      });
+      try {
+        await loadWorklet(context);
+        const node = new AudioWorkletNode(context, "openflow-capture");
+        next.worklet = node;
+        node.port.onmessage = onWorkletMessage;
+      } catch (_error) {
+        next.worklet = null;
+      }
+      capture = next;
+      return next;
+    }
+
+    function settle() {
+      mode = "idle";
+      near = settleNear;
+      menuOpen = false;
+      document.body.classList.remove("speaking");
+      paint();
+    }
+
+    function finishUi(bucket, result) {
+      if (!bucket || bucket.gen !== uiGen || armed) return;
+      if (result && result.text) play("done");
+      settle();
+    }
+
+    function failUi(gen) {
+      if (gen !== uiGen || armed) return;
+      play("error");
+      settle();
+    }
+
+    async function transcribe(bucket) {
+      await bucket.send;
+      if (bucket.error) throw bucket.error;
+      if (bucket.frames.length) {
+        const frames = bucket.frames;
+        bucket.frames = [];
+        bucket.samples = 0;
+        await ship(bucket, frames);
+      }
+      if (!bucket.token && bucket.blobs && bucket.blobs.length) {
+        const blob = new Blob(bucket.blobs, { type: "audio/webm" });
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        if (bytes.length >= 200) {
+          if (bytes.length > 24 * 1024 * 1024) throw new Error("Recording is too large.");
+          const session = await window.openflow.dispatch("speech.session");
+          bucket.token = session && session.token;
+          if (!bucket.token) throw new Error("Recording session expired.");
+          await window.openflow.dispatch("speech.part", {
+            token: bucket.token,
+            audio: bytes,
+            mime: "audio/webm",
+            filename: "recording.webm",
+          });
+        }
+      }
+      if (bucket.error) throw bucket.error;
+      if (!bucket.token) {
+        finishUi(bucket, { empty: true });
+        return;
+      }
+      const result = await window.openflow.dispatch("speech.finish", {
+        token: bucket.token,
+        durationMs: Math.max(0, Date.now() - bucket.startedAt),
+        appName: "",
+      });
+      finishUi(bucket, result || { empty: true });
+    }
+
+    function resetBars() {
+      document.querySelectorAll(".eq i").forEach((bar) => { bar.style.height = "3px"; });
+    }
+
+    async function collectStopped() {
+      if (!capture) return;
+      const pending = [];
+      if (capture.recorder && capture.recorder.state === "recording") {
+        pending.push(new Promise((resolve) => {
+          capture.recorder.addEventListener("stop", () => resolve(), { once: true });
+          try { capture.recorder.requestData(); } catch (_error) {}
+          try { capture.recorder.stop(); } catch (_error) { resolve(); }
+        }));
+      }
+      if (capture.worklet) {
+        if (capture.context && capture.context.state === "suspended") await capture.context.resume().catch(() => {});
+        pending.push(new Promise((resolve) => {
+          const timer = setTimeout(() => {
+            if (capture) capture.onDone = null;
+            resolve();
+          }, 500);
+          capture.onDone = () => {
+            clearTimeout(timer);
+            resolve();
+          };
+          capture.worklet.port.postMessage("stop");
+        }));
+      }
+      await Promise.all(pending);
+      if (capture && capture.meter) cancelAnimationFrame(capture.meter);
+      if (capture) capture.meter = 0;
+      disconnectGraph();
+    }
+
+    async function start() {
+      if (armed) return;
+      const gen = ++uiGen;
+      armed = true;
+      mode = "listening";
+      menuOpen = false;
+      play("start");
+      paint();
+      try {
+        await enqueueMic(async () => {
+          if (!armed || gen !== uiGen) return;
+          await ensureCapture();
+          if (!armed || gen !== uiGen) return;
+          if (capture.context && capture.context.state === "suspended") await capture.context.resume().catch(() => {});
+          const bucket = {
+            gen,
+            frames: [],
+            samples: 0,
+            blobs: [],
+            mime: "audio/webm",
+            token: "",
+            rate: capture.rate,
+            send: Promise.resolve(),
+            error: null,
+            startedAt: Date.now(),
+          };
+          activeBucket = bucket;
+          connectGraph();
+          startRecorder(bucket);
+          if (capture.worklet) capture.worklet.port.postMessage("start");
+        });
+      } catch (_error) {
+        if (gen !== uiGen) return;
+        armed = false;
+        activeBucket = null;
+        closingBucket = null;
+        mode = "idle";
+        document.body.classList.remove("speaking");
+        play("error");
+        paint();
+        if (window.openflow) {
+          window.openflow.dispatch("notifications.add", {
+            title: "Microphone",
+            body: "Microphone access blocked",
+          }).catch(() => {});
+        }
+      }
+    }
+
+    function stop() {
+      if (!armed) return;
+      const gen = uiGen;
+      settleNear = fromSymbol;
+      fromSymbol = false;
+      armed = false;
+      mode = "working";
+      menuOpen = false;
+      document.body.classList.remove("speaking");
+      resetBars();
+      paint();
+      enqueueMic(async () => {
+        const bucket = activeBucket;
+        activeBucket = null;
+        closingBucket = bucket;
+        if (!bucket) return null;
+        await collectStopped();
+        closingBucket = null;
+        return bucket;
+      }).then((bucket) => {
+        if (!bucket) {
+          if (gen === uiGen && !armed) settle();
+          return null;
+        }
+        return transcribe(bucket);
+      }).catch(() => failUi(gen));
+    }
+
+    function applyState(state) {
+      const next = state && state.mode;
+      if (armed || mode === "listening" || mode === "working") {
+        if (!next || next === "idle" || next === "hidden" || next === "result" || next === "error") return;
+      }
+      if (next === "error" && !armed) {
+        mode = "idle";
+        play("error");
+        paint();
+        return;
+      }
+      if (next === "result" || next === "listening" || next === "working") return;
+      if (mode !== "idle" && !armed) {
+        mode = "idle";
+        paint();
+      }
+    }
+
+    mic.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (window.openflow) window.openflow.dispatch("dictate.toggle", { source: "symbol" });
+    });
+    pill.addEventListener("click", () => {
+      if (fromSymbol && mode === "listening" && window.openflow) window.openflow.dispatch("dictate.toggle");
+    });
+    if (window.openflow) {
+      window.openflow.on("bar-command", (message) => {
+        if (!message) return;
+        if (message.type === "start") {
+          fromSymbol = message.source === "symbol";
+          start();
+        }
+        if (message.type === "stop") {
+          if (message.source === "symbol") fromSymbol = true;
+          else if (message.source === "chord") fromSymbol = false;
+          stop();
+        }
+        if (message.type === "toggle") {
+          if (armed) stop();
+          else start();
+        }
+        if (message.type === "near" && mode === "idle") {
+          near = true;
+          paint();
+        }
+        if (message.type === "far" && !armed && mode === "idle") {
+          near = false;
+          menuOpen = false;
+          paint();
+        }
+      });
+    }
+    shot.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (window.openflow) window.openflow.dispatch("shot.open");
+    });
+    note.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (window.openflow) window.openflow.dispatch("note.open");
+    });
+    tune.addEventListener("click", (event) => {
+      event.stopPropagation();
+      menuOpen = !menuOpen;
+      paint();
+    });
+    grip.addEventListener("click", () => {
+      near = true;
+      paint();
+    });
+
+    if (window.openflow) {
+      window.openflow.on("overlay-state", applyState);
+      paint();
+    } else {
+      paint();
+    }
+  </script>
+</body>
+</html>

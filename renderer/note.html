@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Note</title>
+  <style>
+    :root {
+      --sand-50: #fcfcfb;
+      --sand-500: #f5f4f0;
+      --sand-600: #eeebe3;
+      --vast-600: #71716e;
+      --vast-950: #1a1a1a;
+      --green-600: #059669;
+      --green-50: #ecfdf5;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: transparent; color: var(--vast-950); font-family: "Segoe UI", system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    body { padding: 14px; }
+    .card { height: 100%; background: var(--sand-50); border: 1px solid var(--sand-600); border-radius: 20px; box-shadow: 0 20px 50px rgba(26, 26, 26, 0.18), 0 4px 12px rgba(26, 26, 26, 0.08); display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
+    header { display: flex; align-items: center; gap: 8px; padding: 12px 14px 10px; border-bottom: 1px solid var(--sand-600); background: var(--sand-500); -webkit-app-region: drag; }
+    footer { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--sand-600); background: var(--sand-50); }
+    button, input, textarea { font: inherit; color: inherit; background: transparent; border: 0; -webkit-app-region: no-drag; }
+    button { cursor: pointer; }
+    .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; min-width: 0; flex: 1; }
+    .tab { display: grid; grid-template-columns: minmax(0, 1fr) 20px; align-items: center; gap: 4px; width: 100%; min-width: 0; max-width: 100%; height: 32px; padding: 0 6px 0 10px; border-radius: 10px; background: rgba(26, 26, 26, 0.04); border: 1px solid transparent; overflow: hidden; transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease; }
+    .tab[aria-current="true"] { background: #ffffff; border-color: var(--sand-600); box-shadow: 0 1px 3px rgba(26, 26, 26, 0.07); }
+    .tab input, .tab button[data-id] { display: block; width: 100%; min-width: 0; max-width: 100%; padding: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; font-weight: 600; text-align: left; outline: none; }
+    .tab button[data-close] { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; color: var(--vast-600); font-size: 14px; line-height: 1; padding: 0; }
+    .tab button[data-close]:hover { background: var(--sand-600); color: var(--vast-950); }
+    .icon { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; color: var(--vast-950); font-size: 16px; transition: background-color .14s ease; }
+    .icon:hover { background: var(--sand-600); }
+    textarea { resize: none; width: 100%; height: 100%; padding: 16px 18px; outline: none; font-size: 14.5px; line-height: 1.6; background: #ffffff; color: var(--vast-950); }
+    textarea::placeholder { color: var(--vast-600); }
+    #save, #copy { border-radius: 999px; padding: 8px 18px; font-size: 13px; font-weight: 600; transition: all .15s ease; }
+    #save { background: var(--vast-950); color: var(--sand-50); border: 1px solid var(--vast-950); box-shadow: 0 1px 2px rgba(26, 26, 26, 0.12); }
+    #save:hover:not(:disabled) { opacity: 0.92; transform: translateY(-0.5px); }
+    #save.saved { background: var(--green-50); color: var(--green-600); border-color: var(--green-600); }
+    #copy { color: var(--vast-950); background: var(--sand-500); border: 1px solid var(--sand-600); }
+    #copy:hover { background: var(--sand-600); }
+    #copy.copied { background: var(--green-50); color: var(--green-600); border-color: var(--green-600); }
+    svg { display: block; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <header>
+      <svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true">
+        <circle cx="8" cy="8" r="5.2" fill="none" stroke="#1a1a1a" stroke-width="1.5"></circle>
+        <circle cx="8" cy="8" r="1.4" fill="#1a1a1a"></circle>
+      </svg>
+      <div class="tabs" id="tabs"></div>
+      <button id="add" class="icon" type="button" aria-label="New note" title="New note">+</button>
+      <button id="close" class="icon" type="button" aria-label="Close" title="Close">×</button>
+    </header>
+    <textarea id="body" placeholder="Write or dictate a note..."></textarea>
+    <footer>
+      <button id="copy" type="button">Copy</button>
+      <button id="save" type="button">Save</button>
+    </footer>
+  </div>
+  <script>
+    let pads = [];
+    let current = null;
+    let wanted = null;
+    let timer = 0;
+    let reloadTicket = 0;
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+      }[char]));
+    }
+
+    function renderTabs() {
+      const tabs = document.querySelector("#tabs");
+      tabs.innerHTML = pads.map((pad) => {
+        const on = pad.id === current;
+        const label = pad.title || "Note";
+        const field = on
+          ? `<input size="1" data-title="${esc(pad.id)}" value="${esc(label)}" aria-label="Title">`
+          : `<button type="button" data-id="${esc(pad.id)}">${esc(label)}</button>`;
+        return `<div class="tab" aria-current="${on ? "true" : "false"}">${field}<button type="button" data-close="${esc(pad.id)}" aria-label="Close note">×</button></div>`;
+      }).join("");
+      const pad = pads.find((item) => item.id === current);
+      document.querySelector("#body").value = pad ? pad.content : "";
+    }
+
+    function applyWanted() {
+      if (wanted && pads.some((pad) => pad.id === wanted)) current = wanted;
+      else if (!pads.some((pad) => pad.id === current)) current = pads[0] ? pads[0].id : null;
+      renderTabs();
+    }
+
+    async function reload() {
+      const ticket = ++reloadTicket;
+      pads = await window.openflow.dispatch("pads.list");
+      if (ticket !== reloadTicket) return;
+      if (!pads.length) {
+        const created = await window.openflow.dispatch("pads.save", { title: "Note", content: "" });
+        if (ticket !== reloadTicket) return;
+        pads = [created];
+        if (!wanted) wanted = created.id;
+      }
+      applyWanted();
+    }
+
+    function onShow(data) {
+      wanted = data && data.id ? data.id : wanted;
+      if (!pads.length || (wanted && !pads.some((pad) => pad.id === wanted))) {
+        reload();
+        return;
+      }
+      applyWanted();
+    }
+
+    function schedule() {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        const pad = pads.find((item) => item.id === current);
+        if (!pad) return;
+        pad.content = document.querySelector("#body").value;
+        await window.openflow.dispatch("pads.save", { id: pad.id, title: pad.title, content: pad.content });
+      }, 250);
+    }
+
+    document.querySelector("#tabs").addEventListener("click", async (event) => {
+      const close = event.target.closest("[data-close]");
+      const tab = event.target.closest("[data-id]");
+      if (close) {
+        if (pads.length === 1) {
+          await window.openflow.dispatch("note.close");
+          return;
+        }
+        await window.openflow.dispatch("pads.delete", { id: close.dataset.close });
+        if (current === close.dataset.close) current = null;
+        await reload();
+      } else if (tab) {
+        current = tab.dataset.id;
+        renderTabs();
+      }
+    });
+    document.querySelector("#tabs").addEventListener("input", (event) => {
+      const field = event.target.closest("[data-title]");
+      if (!field) return;
+      const pad = pads.find((item) => item.id === field.dataset.title);
+      if (!pad) return;
+      pad.title = field.value.trim() || "Note";
+      schedule();
+    });
+    document.querySelector("#add").addEventListener("click", async () => {
+      const created = await window.openflow.dispatch("pads.save", { title: "Note", content: "" });
+      pads.push(created);
+      current = created.id;
+      renderTabs();
+    });
+    document.querySelector("#body").addEventListener("input", schedule);
+    document.querySelector("#close").addEventListener("click", () => window.openflow.dispatch("note.close"));
+    document.querySelector("#copy").addEventListener("click", async () => {
+      const btn = document.querySelector("#copy");
+      await window.openflow.dispatch("clipboard.copy", { text: document.querySelector("#body").value });
+      btn.textContent = "Copied ✓";
+      btn.classList.add("copied");
+      setTimeout(() => {
+        btn.textContent = "Copy";
+        btn.classList.remove("copied");
+      }, 1000);
+    });
+    document.querySelector("#save").addEventListener("click", async () => {
+      const pad = pads.find((item) => item.id === current);
+      if (!pad || !window.openflow) return;
+      clearTimeout(timer);
+      const field = document.querySelector("#tabs input");
+      pad.title = field && field.value.trim() ? field.value.trim() : "Note";
+      pad.content = document.querySelector("#body").value;
+      const button = document.querySelector("#save");
+      button.disabled = true;
+      button.textContent = "Saved ✓";
+      button.classList.add("saved");
+      await window.openflow.dispatch("pads.save", { id: pad.id, title: pad.title, content: pad.content });
+      await new Promise((resolve) => setTimeout(resolve, 650));
+      button.disabled = false;
+      button.textContent = "Save";
+      button.classList.remove("saved");
+      await window.openflow.dispatch("note.close");
+    });
+    if (window.openflow) {
+      window.openflow.on("note-show", onShow);
+      reload();
+    }
+  </script>
+</body>
+</html>
