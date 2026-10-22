@@ -10,6 +10,7 @@ const { createStore } = require("../src/store");
 const providers = require("../src/providers");
 const flow = require("../src/flow");
 const audio = require("../src/audio");
+const parakeet = require("../src/parakeet");
 
 app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
 
@@ -25,6 +26,7 @@ let dictating = false;
 let dictateSource = "";
 let pointerTimer = null;
 let pointerNear = false;
+let barMenuOpen = false;
 let chordStarts = 0;
 let targetHwnd = 0;
 let notePadId = "";
@@ -153,6 +155,27 @@ function endDictate() {
   sendBar({ type: "stop", source });
 }
 
+function needsKeyPrompt() {
+  if (process.env.OPENFLOW_SMOKE === "1" || !store) return false;
+  const settings = store.getSettings();
+  return settings.sttEngine === "openai" && !readKey();
+}
+
+function needsOnboarding() {
+  if (process.env.OPENFLOW_SMOKE === "1" || !store) return false;
+  return !store.getSettings().onboardingDone;
+}
+
+function syncSttEngine() {
+  if (!store || process.env.OPENFLOW_SMOKE === "1") return;
+  const settings = store.getSettings();
+  if (settings.sttEngine === "openai") {
+    parakeet.stopBackground();
+  } else {
+    parakeet.startBackground(app.getPath("userData")).catch(() => {});
+  }
+}
+
 function showMain(refresh) {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   if (mainWindow.isMinimized()) mainWindow.restore();
@@ -160,7 +183,8 @@ function showMain(refresh) {
   mainWindow.moveTop();
   mainWindow.focus();
   const payload = { ...(refresh || {}) };
-  if (!readKey() && process.env.OPENFLOW_SMOKE !== "1") payload.askKey = true;
+  if (needsOnboarding()) payload.onboarding = true;
+  else if (needsKeyPrompt()) payload.askKey = true;
   pendingRefresh = payload;
   const send = () => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -250,7 +274,7 @@ function showNotePad(id) {
 
 function openFreshNote() {
   const created = store.savePad({ title: "Note", content: "" });
-  showNotePad(created.id);
+  showMain({ openPadId: created.id });
   return created;
 }
 
@@ -299,13 +323,14 @@ function watchPointer() {
     const area = screen.getPrimaryDisplay().workArea;
     const center = area.x + area.width / 2;
     const bottom = area.y + area.height;
-    const reachX = pointerNear ? 170 : 72;
-    const reachY = pointerNear ? 340 : 70;
-    const hit = Math.abs(cursor.x - center) <= reachX && bottom - cursor.y <= reachY && bottom - cursor.y >= -24;
+    const reachX = pointerNear ? (barMenuOpen ? 156 : 86) : 44;
+    const reachY = pointerNear ? (barMenuOpen ? 330 : 58) : 36;
+    const hit = Math.abs(cursor.x - center) <= reachX && bottom - cursor.y <= reachY && bottom - cursor.y >= -18;
     if (hit === pointerNear) return;
     pointerNear = hit;
+    if (!hit) barMenuOpen = false;
     sendBar({ type: hit ? "near" : "far" });
-  }, 90);
+  }, 50);
 }
 
 function stopChord() {
@@ -361,9 +386,13 @@ function writeKey(value) {
 function publicSettings() {
   const settings = store.getSettings();
   const preset = providers.defaultsFor(settings.provider);
+  const sttEngine = settings.sttEngine === "openai" ? "openai" : "parakeet";
   return {
     ...settings,
+    sttEngine,
+    onboardingDone: Boolean(settings.onboardingDone),
     hasKey: Boolean(readKey()),
+    parakeet: parakeet.getStatus(app.getPath("userData")),
     effective: {
       sttModel: settings.sttModel || preset.sttModel,
       ttsModel: settings.ttsModel || preset.ttsModel,
@@ -543,7 +572,6 @@ function saveTranscriptNote(text) {
   const created = store.savePad({ title: "Note", content: body });
   store.addNotification({ title: "Note", body: "No text field focused — saved as note" });
   showMain({ openPadId: created.id });
-  showNotePad(created.id);
   return created;
 }
 
@@ -654,20 +682,31 @@ function createWindows() {
     mainWindow.hide();
   });
   mainWindow.on("show", () => {
-    if (!readKey() && process.env.OPENFLOW_SMOKE !== "1") {
+    if (process.env.OPENFLOW_SMOKE === "1") return;
+    if (needsOnboarding()) {
+      pendingRefresh = { ...(pendingRefresh || {}), onboarding: true };
+    } else if (needsKeyPrompt()) {
       pendingRefresh = { ...(pendingRefresh || {}), askKey: true };
-      const send = () => {
-        if (!mainWindow || mainWindow.isDestroyed()) return;
-        mainWindow.webContents.send("desk-refresh", pendingRefresh || { askKey: true });
-      };
-      if (mainWindow.webContents.isLoading()) mainWindow.webContents.once("did-finish-load", send);
-      else send();
+    } else {
+      return;
     }
+    const send = () => {
+      if (!mainWindow || mainWindow.isDestroyed()) return;
+      mainWindow.webContents.send("desk-refresh", pendingRefresh || {});
+    };
+    if (mainWindow.webContents.isLoading()) mainWindow.webContents.once("did-finish-load", send);
+    else send();
   });
   mainWindow.once("ready-to-show", () => {
     const smoke = process.env.OPENFLOW_SMOKE === "1";
-    if (!readKey() || smoke) mainWindow.show();
-    if (!readKey() && !smoke) showMain({ askKey: true });
+    const openOnStart = smoke || needsOnboarding() || needsKeyPrompt() || process.argv.includes("--installed");
+    if (openOnStart) mainWindow.show();
+    if (!smoke && openOnStart) {
+      showMain({
+        onboarding: needsOnboarding(),
+        askKey: !needsOnboarding() && needsKeyPrompt(),
+      });
+    }
   });
   if (process.env.OPENFLOW_SMOKE === "1") {
     const required = ["Dictation", "Notes", "Usage", "Settings"];
@@ -880,7 +919,15 @@ const actions = {
   "settings.get": () => publicSettings(),
   "settings.save": (payload) => {
     if (payload && Object.prototype.hasOwnProperty.call(payload, "apiKey")) writeKey(payload.apiKey);
-    store.updateSettings({ provider: "openai", sttModel: "", ttsModel: "", ttsVoice: "", textModel: "" });
+    const patch = { provider: "openai", sttModel: "", ttsModel: "", ttsVoice: "", textModel: "" };
+    if (payload && (payload.sttEngine === "parakeet" || payload.sttEngine === "openai")) {
+      patch.sttEngine = payload.sttEngine;
+    }
+    if (payload && Object.prototype.hasOwnProperty.call(payload, "onboardingDone")) {
+      patch.onboardingDone = Boolean(payload.onboardingDone);
+    }
+    store.updateSettings(patch);
+    syncSttEngine();
     return { settings: publicSettings(), hotkeyRegistered: true };
   },
   "transform.set": (payload) => {
@@ -901,6 +948,9 @@ const actions = {
     return true;
   },
   "bar.mode": (payload) => {
+    if (payload && Object.prototype.hasOwnProperty.call(payload, "menuOpen")) {
+      barMenuOpen = Boolean(payload.menuOpen);
+    }
     if (hidingBar) return true;
     placeBar(payload.width, payload.height);
     if (overlayWindow && !overlayWindow.isDestroyed() && !overlayWindow.isVisible()) overlayWindow.showInactive();
@@ -1011,20 +1061,27 @@ const actions = {
     if (bytes.length < 45) return true;
     const mime = payload.mime || "audio/wav";
     const filename = payload.filename || (String(mime).includes("wav") ? "recording.wav" : "recording.webm");
+    const sttEngine = store.getSettings().sttEngine === "openai" ? "openai" : "parakeet";
     session.pending = session.pending.then(async () => {
       if (session.failed) return;
       try {
-        const body = await providers.postTranscription(fetch, () => providers.transcriptionRequest({
-          provider: "openai",
-          apiKey: readKey(),
-          audio: bytes,
-          mime,
-          filename,
-        }));
-        const text = providers.parseTranscription(body);
-        const language = providers.detectedLanguage(body);
-        if (text) session.texts.push(text);
-        if (language) session.language = language;
+        if (sttEngine === "parakeet") {
+          const result = await parakeet.transcribeWav(bytes, app.getPath("userData"));
+          if (result.text) session.texts.push(result.text);
+          if (result.language) session.language = result.language;
+        } else {
+          const body = await providers.postTranscription(fetch, () => providers.transcriptionRequest({
+            provider: "openai",
+            apiKey: readKey(),
+            audio: bytes,
+            mime,
+            filename,
+          }));
+          const text = providers.parseTranscription(body);
+          const language = providers.detectedLanguage(body);
+          if (text) session.texts.push(text);
+          if (language) session.language = language;
+        }
       } catch (error) {
         session.failed = error instanceof Error ? error : new Error(String(error));
       }
@@ -1168,6 +1225,7 @@ if (!gotLock) {
       session.defaultSession.setDevicePermissionHandler((details) => details.deviceType === "microphone" || details.deviceType === "audio");
     }
     store = createStore(path.join(app.getPath("userData"), "openflow.json"));
+    syncSttEngine();
     createWindows();
     createTray();
     await ensureMicrophone();

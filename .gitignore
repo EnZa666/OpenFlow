@@ -4,3 +4,4 @@ dist/
 SPEC.md
 *.log
 .cache/
+vendor/parakeet-tdt-0.6b-v3/

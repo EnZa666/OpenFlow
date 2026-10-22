@@ -11,20 +11,21 @@
       --vast-950: #1a1a1a;
     }
     * { box-sizing: border-box; }
-    html, body { margin: 0; background: var(--sand-500); color: var(--vast-950); font-family: "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    html, body { margin: 0; background: var(--sand-500); color: var(--vast-950); font-family: "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
     body { width: 1100px; height: 460px; padding: 34px 42px 30px; display: flex; flex-direction: column; justify-content: space-between; }
-    .head { display: flex; align-items: baseline; justify-content: space-between; }
     h1 { margin: 0; font-family: Georgia, serif; font-size: 32px; font-weight: 500; letter-spacing: -0.025em; }
     .lead { margin: 6px 0 0; color: var(--vast-600); font-size: 15.5px; }
-    .showcase { background: var(--sand-50); border: 1px solid var(--sand-600); border-radius: 20px; padding: 36px 24px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 0 4px 14px rgba(26,26,26,.05); }
-    .hover-demo { position: relative; display: flex; flex-direction: column; align-items: center; }
-    .tooltip-row { display: flex; gap: 14px; margin-bottom: 10px; }
-    .tip { background: var(--vast-950); color: var(--sand-50); font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 999px; box-shadow: 0 4px 12px rgba(0,0,0,.18); }
-    .pill { display: flex; align-items: center; justify-content: center; gap: 8px; width: 204px; height: 48px; padding: 5px; background: var(--vast-950); color: #fff; border-radius: 999px; box-shadow: 0 10px 28px rgba(26,26,26,.24); }
+    .showcase { background: var(--sand-50); border: 1px solid var(--sand-600); border-radius: 20px; padding: 32px 24px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .tooltip-row { display: flex; gap: 14px; margin-bottom: 6px; }
+    .tip { background: #000000; color: #ffffff; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 999px; box-shadow: none; }
+    .pill { display: flex; align-items: center; justify-content: center; gap: 8px; width: 204px; height: 48px; padding: 5px; background: #000000; color: #fff; border-radius: 999px; box-shadow: none; }
     .pill div { width: 38px; height: 38px; border-radius: 999px; display: grid; place-items: center; }
-    .pill div.active { background: #30302f; }
+    .pill div.active { background: #222222; }
+    .grip-row { display: flex; align-items: center; gap: 10px; margin-top: 2px; font-size: 12px; color: var(--vast-600); }
+    .grip { width: 58px; height: 12px; border-radius: 999px; background: #000000; clip-path: inset(2px 0 2px 0); display: flex; align-items: center; justify-content: center; }
+    .grip span { width: 22px; height: 2px; border-radius: 999px; background: rgba(255,255,255,.82); }
     .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-    article { background: var(--sand-50); border: 1px solid var(--sand-600); border-radius: 16px; padding: 16px 18px; box-shadow: 0 2px 6px rgba(26,26,26,.04); }
+    article { background: var(--sand-50); border: 1px solid var(--sand-600); border-radius: 16px; padding: 16px 18px; }
     .tag { display: inline-block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--vast-600); margin-bottom: 4px; }
     strong { display: block; font-size: 16px; margin-bottom: 6px; color: var(--vast-950); }
     p { margin: 0; font-size: 13.5px; line-height: 1.45; color: #464544; }
@@ -34,7 +35,7 @@
 <body>
   <div>
     <h1>Expanded Floating Bubble &amp; Symbols</h1>
-    <p class="lead">Positioned at the bottom center of your screen. Hovering near the bar expands the four action symbols with clean hover labels above each icon.</p>
+    <p class="lead">Pure dark-black shadowless dock at the bottom center of your screen. Expands only when the cursor enters its immediate vicinity and closes rapidly as you move away.</p>
   </div>
   <div class="showcase">
     <div class="tooltip-row">
@@ -49,11 +50,15 @@
       <div><svg width="22" height="22" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 3.1 14.9 7.4 7.2 15.1H2.9v-4.3z"></path></svg></div>
       <div><svg width="22" height="22" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 6.4V3.2H6.4M11.6 3.2h3.2v3.2M14.8 11.6v3.2h-3.2M6.4 14.8H3.2v-3.2"></path><circle cx="9" cy="9" r="1.7"></circle></svg></div>
     </div>
+    <div class="grip-row">
+      <span>Collapsed state:</span>
+      <div class="grip"><span></span></div>
+    </div>
   </div>
   <div class="grid">
     <article><span class="tag">Hover: "microphone"</span><strong>Microphone</strong><p>Starts voice recording. Click again or press Ctrl+Win to stop and paste into the active text field.</p></article>
-    <article><span class="tag">Hover: "notes"</span><strong>Notes</strong><p>Creates and opens a fresh note tab immediately. All notes are stored locally on your machine.</p></article>
-    <article><span class="tag">Hover: "polish"</span><strong>Polish (Pen)</strong><p>Opens the style and rewrite menu (Polish, Engineer, Concise, Clarity, Reorder, Structure, Tone).</p></article>
+    <article><span class="tag">Hover: "notes"</span><strong>Notes</strong><p>Creates and opens a fresh note immediately in the Notes editor. All notes stay locally on your PC.</p></article>
+    <article><span class="tag">Hover: "polish"</span><strong>Polish (Pen)</strong><p>Opens the style and rewrite menu (Correction, Engineer, Style) right above the dock.</p></article>
     <article><span class="tag">Hover: "screenshot"</span><strong>Screenshot</strong><p>Launches the bundled monochrome Flameshot region selector to annotate, copy, or save screenshots.</p></article>
   </div>
 </body>

@@ -8,6 +8,8 @@ function blank() {
   return {
     settings: {
       provider: "openai",
+      sttEngine: "parakeet",
+      onboardingDone: false,
       transform: "polish",
       transformAuto: false,
       polishStyle: "clarity",
