@@ -18,10 +18,11 @@ public static class OpenFlowChord {
   private const uint GA_ROOT = 2;
   private static IntPtr hook;
   private static HookProc proc;
+  private static volatile string chordMode = "win";
   private static bool ctrl;
-  private static bool win;
+  private static bool mod2;
   private static bool active;
-  private static bool ateWin;
+  private static bool ateMod2;
 
   private delegate IntPtr HookProc(int nCode, IntPtr wParam, IntPtr lParam);
 
@@ -141,7 +142,25 @@ public static class OpenFlowChord {
   }
 
   private static bool IsCtrl(uint vk) { return vk == 0x11 || vk == 0xA2 || vk == 0xA3; }
-  private static bool IsWin(uint vk) { return vk == 0x5B || vk == 0x5C; }
+  private static bool IsMod2(uint vk) {
+    string mode = chordMode;
+    if (mode == "space") return vk == 0x20;
+    if (mode == "alt") return vk == 0x12 || vk == 0xA4 || vk == 0xA5;
+    if (mode == "shift") return vk == 0x10 || vk == 0xA0 || vk == 0xA1;
+    return vk == 0x5B || vk == 0x5C;
+  }
+
+  private static void SetChordMode(string raw) {
+    string v = (raw ?? "").Trim().ToLowerInvariant();
+    if (v == "ctrl+space" || v == "space") chordMode = "space";
+    else if (v == "ctrl+alt" || v == "alt") chordMode = "alt";
+    else if (v == "ctrl+shift" || v == "shift") chordMode = "shift";
+    else chordMode = "win";
+    ctrl = false;
+    mod2 = false;
+    active = false;
+    ateMod2 = false;
+  }
 
   private static void Emit(string line) {
     Console.WriteLine(line);
@@ -158,21 +177,21 @@ public static class OpenFlowChord {
       bool swallow = false;
       if (down) {
         if (IsCtrl(info.vkCode)) ctrl = true;
-        if (IsWin(info.vkCode)) win = true;
-        if (ctrl && win && !active) {
+        if (IsMod2(info.vkCode)) mod2 = true;
+        if (ctrl && mod2 && !active) {
           active = true;
-          ateWin = true;
+          ateMod2 = true;
           Emit("dictate-down " + GetForegroundWindow().ToInt64());
         }
-        if (active && (IsCtrl(info.vkCode) || IsWin(info.vkCode))) swallow = true;
+        if (active && (IsCtrl(info.vkCode) || IsMod2(info.vkCode))) swallow = true;
       } else if (up) {
         if (IsCtrl(info.vkCode)) ctrl = false;
-        if (IsWin(info.vkCode)) win = false;
-        if (IsWin(info.vkCode) && ateWin) {
+        if (IsMod2(info.vkCode)) mod2 = false;
+        if (IsMod2(info.vkCode) && ateMod2) {
           swallow = true;
-          ateWin = false;
+          ateMod2 = false;
         }
-        if (active && !(ctrl && win)) {
+        if (active && !(ctrl && mod2)) {
           active = false;
           Emit("dictate-up");
         }
@@ -428,7 +447,10 @@ public static class OpenFlowChord {
         writer.AutoFlush = true;
         string line = reader.ReadLine();
         bool ok = false;
-        if (line != null && line.Trim().StartsWith("paste ")) {
+        if (line != null && line.Trim().StartsWith("chord ")) {
+          SetChordMode(line.Trim().Substring(6));
+          ok = true;
+        } else if (line != null && line.Trim().StartsWith("paste ")) {
           string rest = line.Trim().Substring(6);
           int space = rest.IndexOf(' ');
           long hwnd = 0;
@@ -466,6 +488,7 @@ public static class OpenFlowChord {
 
   public static void Run() {
     Console.OutputEncoding = Encoding.UTF8;
+    SetChordMode(Environment.GetEnvironmentVariable("OPENFLOW_CHORD"));
     proc = Callback;
     Thread pipe = new Thread(WatchPipe);
     pipe.IsBackground = true;

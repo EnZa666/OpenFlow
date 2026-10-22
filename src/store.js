@@ -10,6 +10,8 @@ function blank() {
       provider: "openai",
       sttEngine: "parakeet",
       onboardingDone: false,
+      dictationShortcut: "ctrl+win",
+      dictationMode: "hold",
       transform: "polish",
       transformAuto: false,
       polishStyle: "clarity",

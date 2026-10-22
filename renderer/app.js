@@ -147,15 +147,29 @@ function render() {
   }
 }
 
+function shortcutKeysHtml(shortcut) {
+  if (shortcut === "ctrl+space") return "<kbd>Ctrl</kbd> + <kbd>Space</kbd>";
+  if (shortcut === "ctrl+alt") return "<kbd>Ctrl</kbd> + <kbd>Alt</kbd>";
+  if (shortcut === "ctrl+shift") return "<kbd>Ctrl</kbd> + <kbd>Shift</kbd>";
+  return "<kbd>Ctrl</kbd> + <kbd>Win</kbd>";
+}
+
 function dictateHtml() {
   const history = state.desk.history || [];
   const last = history[0];
   const text = last ? (last.edited_text || last.formatted_text || last.asr_text) : "";
-  const engine = (state.desk.settings && state.desk.settings.sttEngine === "openai") ? "OpenAI API (gpt-transcribe)" : "Parakeet v3 (Local)";
-  const hero = `<div class="hero-card"><div class="hero-copy"><strong>Hold shortcut to dictate anywhere</strong><p>Active engine: ${esc(engine)}. Speak naturally and release to paste or save as a note.</p></div><p class="shortcut"><kbd>Ctrl</kbd> + <kbd>Win</kbd></p></div>`;
+  const settings = state.desk.settings || {};
+  const engine = settings.sttEngine === "openai" ? "OpenAI API (gpt-transcribe)" : "Parakeet v3 (Local)";
+  const shortcut = settings.dictationShortcut || "ctrl+win";
+  const isToggle = settings.dictationMode === "toggle";
+  const headline = isToggle ? "Press shortcut to start and stop dictation" : "Hold shortcut to dictate anywhere";
+  const subline = isToggle
+    ? `Active engine: ${esc(engine)}. Press once to start speaking and press a second time to finish.`
+    : `Active engine: ${esc(engine)}. Speak naturally while holding and release to paste or save as a note.`;
+  const hero = `<div class="hero-card"><div class="hero-copy"><strong>${headline}</strong><p>${subline}</p></div><p class="shortcut">${shortcutKeysHtml(shortcut)}</p></div>`;
   const latest = text
     ? `<div class="section-label">Latest Dictation</div><div class="transcript-card"><div class="transcript-head"><span>${esc(when(last.created_at))}</span><button type="button" class="btn-secondary" data-copy-text="${esc(text)}">Copy</button></div><p class="lead">${esc(text)}</p></div>`
-    : `<p class="empty">No dictations yet. Hold <kbd>Ctrl</kbd> + <kbd>Win</kbd> or click the microphone in the bottom bar to start.</p>`;
+    : `<p class="empty">No dictations yet. Use ${shortcutKeysHtml(shortcut)} or click the microphone in the bottom bar to start.</p>`;
   const recent = history.slice(1, 5);
   const recentHtml = recent.length
     ? `<div class="section-label">Recent History</div><div class="history-list">${recent.map((row) => {
@@ -195,6 +209,8 @@ function usageHtml() {
 function settingsHtml() {
   const settings = state.desk.settings || {};
   const sttEngine = settings.sttEngine === "openai" ? "openai" : "parakeet";
+  const shortcut = settings.dictationShortcut || "ctrl+win";
+  const isToggle = settings.dictationMode === "toggle";
   const pk = settings.parakeet || { installed: false, state: "stopped" };
   let pkBadge = "Local Model";
   let pkReady = false;
@@ -213,11 +229,27 @@ function settingsHtml() {
   } else if (pk.installed) {
     pkBadge = "Installed";
   }
+  const shortcuts = [
+    { id: "ctrl+win", keys: "<kbd>Ctrl</kbd> + <kbd>Win</kbd>", sub: "Default" },
+    { id: "ctrl+space", keys: "<kbd>Ctrl</kbd> + <kbd>Space</kbd>", sub: "Spacebar" },
+    { id: "ctrl+alt", keys: "<kbd>Ctrl</kbd> + <kbd>Alt</kbd>", sub: "Modifier" },
+    { id: "ctrl+shift", keys: "<kbd>Ctrl</kbd> + <kbd>Shift</kbd>", sub: "Modifier" },
+  ];
+  const shortcutHtml = shortcuts.map((item) => {
+    const checked = shortcut === item.id ? "true" : "false";
+    return `<button type="button" class="shortcut-option" role="radio" data-shortcut-select="${item.id}" aria-checked="${checked}"><span class="shortcut-keys">${item.keys}</span><span class="shortcut-sub">${item.sub}</span></button>`;
+  }).join("");
+  const modeTitle = isToggle ? "Press Once to Start / Second Time to Stop" : "Hold Shortcut to Dictate";
+  const modeDesc = isToggle
+    ? "Press the shortcut once to start recording, and press it a second time to finish."
+    : "Keep the shortcut held down while speaking and release to finish dictation.";
+  const dictationCard = `<div class="settings-card"><div class="section-label">Dictation</div><div class="shortcut-grid" role="radiogroup" aria-label="Dictation Shortcut">${shortcutHtml}</div><div class="mode-toggle-card"><div class="mode-toggle-copy"><strong>${modeTitle}</strong><span>${modeDesc}</span></div><div class="mode-slider-wrap"><span class="mode-slider-label${!isToggle ? " active" : ""}">Hold</span><button type="button" class="switch-btn" role="switch" data-dictation-mode-toggle aria-checked="${isToggle ? "true" : "false"}" aria-label="Toggle between Hold to Dictate and Press to Start/Stop"><span class="switch-thumb"></span></button><span class="mode-slider-label${isToggle ? " active" : ""}">Start / Stop</span></div></div></div>`;
   const hint = settings.hasKey ? "Saved locally (enter a new key to replace)" : "sk-... (optional with Parakeet v3)";
   const ask = (sttEngine === "openai" && (state.askKey || !settings.hasKey))
     ? `<div class="prompt-banner">Please enter your OpenAI API key to use cloud speech recognition, or switch to Parakeet v3 (Local).</div>`
     : "";
-  return `<div class="settings-card">${ask}<div class="section-label">Speech-to-Text Engine</div><div class="engine-grid" role="radiogroup" aria-label="Speech-to-Text Engine"><button type="button" class="engine-option" role="radio" data-stt-select="parakeet" aria-checked="${sttEngine === "parakeet" ? "true" : "false"}"><div class="engine-head"><strong>Parakeet v3 (Open-Source)</strong><span class="engine-badge${pkReady ? " ready" : ""}">${esc(pkBadge)}</span></div><p>Runs locally on your PC in the background. Free and requires no API key.</p></button><button type="button" class="engine-option" role="radio" data-stt-select="openai" aria-checked="${sttEngine === "openai" ? "true" : "false"}"><div class="engine-head"><strong>OpenAI API</strong><span class="engine-badge${sttEngine === "openai" && settings.hasKey ? " ready" : ""}">${settings.hasKey ? "Key Saved" : "Cloud"}</span></div><p>Uses OpenAI gpt-transcribe with your personal API key.</p></button></div><label class="key">OpenAI API Key ${sttEngine === "parakeet" ? "(Optional)" : ""}<div class="key-row"><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(hint)}"><button type="button" id="save-key" class="btn-primary">Save Key</button></div></label></div>`;
+  const sttCard = `<div class="settings-card">${ask}<div class="section-label">Speech-to-Text Engine</div><div class="engine-grid" role="radiogroup" aria-label="Speech-to-Text Engine"><button type="button" class="engine-option" role="radio" data-stt-select="parakeet" aria-checked="${sttEngine === "parakeet" ? "true" : "false"}"><div class="engine-head"><strong>Parakeet v3 (Open-Source)</strong><span class="engine-badge${pkReady ? " ready" : ""}">${esc(pkBadge)}</span></div><p>Runs locally on your PC in the background. Free and requires no API key.</p></button><button type="button" class="engine-option" role="radio" data-stt-select="openai" aria-checked="${sttEngine === "openai" ? "true" : "false"}"><div class="engine-head"><strong>OpenAI API</strong><span class="engine-badge${sttEngine === "openai" && settings.hasKey ? " ready" : ""}">${settings.hasKey ? "Key Saved" : "Cloud"}</span></div><p>Uses OpenAI gpt-transcribe with your personal API key.</p></button></div><label class="key">OpenAI API Key ${sttEngine === "parakeet" ? "(Optional)" : ""}<div class="key-row"><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(hint)}"><button type="button" id="save-key" class="btn-primary">Save Key</button></div></label></div>`;
+  return `${dictationCard}${sttCard}`;
 }
 
 function paintEditor() {
@@ -296,6 +328,23 @@ document.addEventListener("DOMContentLoaded", () => {
       const nextEngine = sttSelect.dataset.sttSelect === "openai" ? "openai" : "parakeet";
       await window.openflow.dispatch("settings.save", { sttEngine: nextEngine, onboardingDone: true });
       if (nextEngine === "parakeet") state.askKey = false;
+      await load();
+      return;
+    }
+
+    const shortcutSelect = event.target.closest("[data-shortcut-select]");
+    if (shortcutSelect && window.openflow) {
+      const nextShortcut = shortcutSelect.dataset.shortcutSelect;
+      await window.openflow.dispatch("settings.save", { dictationShortcut: nextShortcut });
+      await load();
+      return;
+    }
+
+    const modeToggle = event.target.closest("[data-dictation-mode-toggle]");
+    if (modeToggle && window.openflow) {
+      const currentMode = (state.desk && state.desk.settings && state.desk.settings.dictationMode) || "hold";
+      const nextMode = currentMode === "toggle" ? "hold" : "toggle";
+      await window.openflow.dispatch("settings.save", { dictationMode: nextMode });
       await load();
       return;
     }

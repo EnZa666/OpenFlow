@@ -645,7 +645,7 @@
       if (window.openflow) window.openflow.dispatch("dictate.toggle", { source: "symbol" });
     });
     pill.addEventListener("click", () => {
-      if (fromSymbol && mode === "listening" && window.openflow) window.openflow.dispatch("dictate.toggle");
+      if (mode === "listening" && window.openflow) window.openflow.dispatch("dictate.toggle");
     });
     if (window.openflow) {
       window.openflow.on("bar-command", (message) => {
@@ -656,7 +656,7 @@
         }
         if (message.type === "stop") {
           if (message.source === "symbol") fromSymbol = true;
-          else if (message.source === "chord") fromSymbol = false;
+          else if (message.source === "chord" || message.source === "toggle") fromSymbol = false;
           stop();
         }
         if (message.type === "toggle") {

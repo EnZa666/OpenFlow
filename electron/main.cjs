@@ -134,9 +134,12 @@ function rememberTarget(hwnd) {
 }
 
 function beginDictate(hwnd, source) {
-  const next = source === "symbol" ? "symbol" : "chord";
+  const mode = store && store.getSettings().dictationMode === "toggle" ? "toggle" : "hold";
+  const next = source === "symbol" ? "symbol" : (mode === "toggle" ? "toggle" : "chord");
   if (dictating) {
-    if (dictateSource === "symbol" && next === "chord") endDictate();
+    if ((dictateSource === "symbol" || dictateSource === "toggle") && next !== "symbol") {
+      endDictate();
+    }
     return;
   }
   rememberTarget(hwnd);
@@ -331,14 +334,33 @@ function pipeName() {
   return `OpenFlowPaste-${process.pid}`;
 }
 
+function syncChordShortcut(shortcut) {
+  if (process.platform !== "win32" || process.env.OPENFLOW_SMOKE === "1") return;
+  const socket = net.connect(`\\\\.\\pipe\\${pipeName()}`);
+  const timer = setTimeout(() => socket.destroy(), 1500);
+  socket.on("connect", () => {
+    socket.write(`chord ${shortcut || "ctrl+win"}\n`);
+  });
+  socket.on("data", () => {
+    clearTimeout(timer);
+    socket.destroy();
+  });
+  socket.on("error", () => {
+    clearTimeout(timer);
+    socket.destroy();
+  });
+}
+
 function startChord() {
   if (process.platform !== "win32" || process.env.OPENFLOW_SMOKE === "1" || chordStarts >= 3) return;
   chordStarts += 1;
+  const initialChord = store ? (store.getSettings().dictationShortcut || "ctrl+win") : "ctrl+win";
   chord = spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptCopy("chord.ps1")], {
     windowsHide: true,
     stdio: ["ignore", "pipe", "pipe"],
     env: Object.assign({}, process.env, {
       OPENFLOW_PIPE: pipeName(),
+      OPENFLOW_CHORD: initialChord,
       OPENFLOW_LOG: path.join(app.getPath("userData"), "paste.log"),
     }),
   });
@@ -354,7 +376,7 @@ function startChord() {
       } else if (text.startsWith("dictate-down")) {
         beginDictate(text.slice("dictate-down".length), "chord");
       } else if (text === "dictate-up") {
-        if (dictateSource !== "symbol") endDictate();
+        if (dictateSource === "chord") endDictate();
       }
     }
   });
@@ -436,9 +458,14 @@ function publicSettings() {
   const settings = store.getSettings();
   const preset = providers.defaultsFor(settings.provider);
   const sttEngine = settings.sttEngine === "openai" ? "openai" : "parakeet";
+  const validShortcuts = ["ctrl+win", "ctrl+space", "ctrl+alt", "ctrl+shift"];
+  const dictationShortcut = validShortcuts.includes(settings.dictationShortcut) ? settings.dictationShortcut : "ctrl+win";
+  const dictationMode = settings.dictationMode === "toggle" ? "toggle" : "hold";
   return {
     ...settings,
     sttEngine,
+    dictationShortcut,
+    dictationMode,
     onboardingDone: Boolean(settings.onboardingDone),
     hasKey: Boolean(readKey()),
     parakeet: parakeet.getStatus(app.getPath("userData")),
@@ -975,10 +1002,18 @@ const actions = {
     if (payload && (payload.sttEngine === "parakeet" || payload.sttEngine === "openai")) {
       patch.sttEngine = payload.sttEngine;
     }
+    const validShortcuts = ["ctrl+win", "ctrl+space", "ctrl+alt", "ctrl+shift"];
+    if (payload && validShortcuts.includes(payload.dictationShortcut)) {
+      patch.dictationShortcut = payload.dictationShortcut;
+    }
+    if (payload && (payload.dictationMode === "hold" || payload.dictationMode === "toggle")) {
+      patch.dictationMode = payload.dictationMode;
+    }
     if (payload && Object.prototype.hasOwnProperty.call(payload, "onboardingDone")) {
       patch.onboardingDone = Boolean(payload.onboardingDone);
     }
     store.updateSettings(patch);
+    if (patch.dictationShortcut) syncChordShortcut(patch.dictationShortcut);
     syncSttEngine();
     return { settings: publicSettings(), hotkeyRegistered: true };
   },
