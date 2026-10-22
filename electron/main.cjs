@@ -1048,6 +1048,10 @@ const actions = {
     return true;
   },
   "note.open": () => openFreshNote(),
+  "desk.open": () => {
+    showMain();
+    return true;
+  },
   "shot.open": () => openFlameshot(),
   "note.close": () => {
     if (noteWindow && !noteWindow.isDestroyed()) noteWindow.hide();

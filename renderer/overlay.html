@@ -92,8 +92,8 @@
       <button id="note" type="button" aria-label="notes" data-tooltip="notes">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.75" y="2.25" width="10.5" height="13.5" rx="1.6"></rect><path d="M6.25 6.75h5.5M6.25 10h5.5"></path></svg>
       </button>
-      <button id="tune" type="button" aria-label="polish" data-tooltip="polish">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 3.1 14.9 7.4 7.2 15.1H2.9v-4.3z"></path></svg>
+      <button id="tune" type="button" aria-label="home" data-tooltip="home">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.75 7.75 9 2.5l6.25 5.25"></path><path d="M4.25 6.75v7.5a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1v-7.5"></path><path d="M7.25 15.25v-4.25h3.5v4.25"></path></svg>
       </button>
       <button id="shot" type="button" aria-label="screenshot" data-tooltip="screenshot">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 6.4V3.2H6.4M11.6 3.2h3.2v3.2M14.8 11.6v3.2h-3.2M6.4 14.8H3.2v-3.2"></path><circle cx="9" cy="9" r="1.7"></circle></svg>
@@ -684,8 +684,7 @@
     });
     tune.addEventListener("click", (event) => {
       event.stopPropagation();
-      menuOpen = !menuOpen;
-      paint();
+      if (window.openflow) window.openflow.dispatch("desk.open");
     });
     grip.addEventListener("click", () => {
       near = true;

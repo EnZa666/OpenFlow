@@ -19,16 +19,16 @@ The compact dark-black floating bubble rests at the bottom of your screen. Hold 
 ## Floating Bubble & Symbols
 
 <p align="center">
-  <img src="docs/bubble.png" alt="Expanded OpenFlow floating bubble with hover labels and explanation for microphone, notes, polish, and screenshot symbols." width="100%">
+  <img src="docs/bubble.png" alt="Expanded OpenFlow floating bubble with hover labels and explanation for microphone, notes, home, and screenshot symbols." width="100%">
 </p>
 
-When idle, the floating bar collapses into a subtle, symmetrically clipped pure-black pill at the bottom of the screen. Moving your cursor into its immediate vicinity expands it to reveal four action icons, and moving away in any direction (horizontally or vertically) snaps it shut right away. Hovering over any icon cleanly displays its label (`microphone`, `notes`, `polish`, `screenshot`) above the symbol.
+When idle, the floating bar collapses into a subtle, symmetrically clipped pure-black pill at the bottom of the screen. Moving your cursor into its immediate vicinity expands it to reveal four action icons, and moving away in any direction (horizontally or vertically) snaps it shut right away. Hovering over any icon cleanly displays its label (`microphone`, `notes`, `home`, `screenshot`) above the symbol.
 
 | Symbol | Hover Label | What It Does |
 | :--- | :--- | :--- |
 | **Microphone** | `microphone` | Starts voice recording immediately. Click again or press `Ctrl` + `Win` once to finish recording and transcribe. |
 | **Note** | `notes` | Opens the clean minimalist note-bubble window right above the floating bar (single note open, no tabs). |
-| **Pen / Sparkle** | `polish` | Displays the style modes (`Correction`, `Engineer`, `Style`) in a clean floating popover menu. |
+| **Home** | `home` | Opens the main OpenFlow desktop UI window directly. |
 | **Screenshot** | `screenshot` | Launches the bundled monochrome Flameshot region selector to capture, annotate, copy, or save a screenshot. |
 
 ---
@@ -84,7 +84,7 @@ OpenFlow has **zero subscriptions or middleman fees**:
 
 Download the latest Windows installer from the [**Releases**](https://github.com/LuiInventions/OpenFlow/releases) page:
 
-- **`OpenFlow-Setup-0.5.0.exe`** — Standard Windows NSIS installer with customizable install directory, Start Menu entry, and Desktop shortcut. When installation finishes, OpenFlow checks whether **Parakeet v3** is already installed (skipping download if present, or showing a live MB progress bar) and then opens the UI so you can choose **Local (Parakeet v3)** or **OpenAI API**.
+- **`OpenFlow-Setup-0.6.0.exe`** — Standard Windows NSIS installer with customizable install directory, Start Menu entry, and Desktop shortcut. When installation finishes, OpenFlow checks whether **Parakeet v3** is already installed (skipping download if present, or showing a live MB progress bar) and then opens the UI so you can choose **Local (Parakeet v3)** or **OpenAI API**.
 
 Requirements: Windows 10 or Windows 11 (64-bit). An OpenAI API key is optional.
 
@@ -98,7 +98,7 @@ npm test
 npm run dist
 ```
 
-This builds the Windows NSIS installer (`release/OpenFlow-Setup-0.5.0.exe`).
+This builds the Windows NSIS installer (`release/OpenFlow-Setup-0.6.0.exe`).
 
 ---
 
