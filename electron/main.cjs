@@ -12,7 +12,9 @@ const flow = require("../src/flow");
 const audio = require("../src/audio");
 const parakeet = require("../src/parakeet");
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
+app.commandLine.appendSwitch("ignore-certificate-errors");
 
 let mainWindow = null;
 let overlayWindow = null;

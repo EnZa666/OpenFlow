@@ -1142,7 +1142,7 @@ label.key input:focus, .onboard-input:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
+  width: 66px;
   height: 30px;
 }
 
@@ -1150,7 +1150,7 @@ label.key input:focus, .onboard-input:focus {
   position: absolute;
   top: 0;
   right: 0;
-  width: 50px;
+  width: 66px;
   height: 30px;
   border-radius: 999px;
   background: #050505;
@@ -1159,7 +1159,7 @@ label.key input:focus, .onboard-input:focus {
 
 .elem-vnote {
   position: absolute;
-  left: 2px;
+  left: 3px;
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -1172,7 +1172,7 @@ label.key input:focus, .onboard-input:focus {
 
 .elem-mic {
   position: absolute;
-  right: 2px;
+  right: 3px;
   width: 26px;
   height: 26px;
   border-radius: 50%;

@@ -54,11 +54,11 @@
     /* Voice note: a dark slider track that slides out to the left of the mic. */
     .voice-group { position: relative; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .vtrack { position: absolute; z-index: 0; top: 0; right: 0; width: 30px; height: 30px; box-sizing: border-box; border-radius: 999px; background: #050505; border: 1px solid #1c1c1c; opacity: 0; pointer-events: none; transition: width .22s cubic-bezier(.2,.8,.2,1), opacity .16s ease; }
-    .pill.voice-open .vtrack { width: 50px; opacity: 1; pointer-events: auto; }
+    .pill.voice-open .vtrack { width: 66px; opacity: 1; pointer-events: auto; }
     #mic { position: relative; z-index: 1; }
     .pill.voice-open #mic { background: #1f1f1f; box-shadow: 0 0 0 1px #2a2a2a; }
 
-    #vnote { position: absolute; z-index: 1; top: 2px; left: -18px; width: 26px; height: 26px; background: #000; opacity: 0; pointer-events: none; transform: translateX(12px) scale(.6); transition: opacity .16s ease, transform .22s cubic-bezier(.2,.8,.2,1), background-color .14s ease; }
+    #vnote { position: absolute; z-index: 1; top: 2px; left: -34px; width: 26px; height: 26px; background: #000; opacity: 0; pointer-events: none; transform: translateX(20px) scale(.6); transition: opacity .16s ease, transform .22s cubic-bezier(.2,.8,.2,1), background-color .14s ease; }
     .pill.voice-open #vnote { opacity: 1; pointer-events: auto; transform: translateX(0) scale(1); }
 
     #vnote:hover { background: #161616; }
