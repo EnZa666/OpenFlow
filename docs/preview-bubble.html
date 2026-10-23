@@ -9,50 +9,104 @@
       --sand-600: #eeebe3;
       --vast-600: #71716e;
       --vast-950: #1a1a1a;
+      --red-500: #ef4444;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; background: var(--sand-500); color: var(--vast-950); font-family: "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
-    body { width: 1100px; height: 460px; padding: 28px 40px 28px; display: flex; flex-direction: column; justify-content: space-between; gap: 16px; }
-    h1 { margin: 0; font-family: Georgia, serif; font-size: 30px; font-weight: 500; letter-spacing: -0.025em; }
-    .lead { margin: 5px 0 0; color: var(--vast-600); font-size: 15px; }
-    .showcase { background: var(--sand-50); border: 1px solid var(--sand-600); border-radius: 20px; padding: 26px 24px 26px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-    .tooltip-row { display: flex; gap: 14px; }
-    .tip { background: #000000; color: #ffffff; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 999px; box-shadow: none; }
-    .pill { display: flex; align-items: center; justify-content: center; gap: 8px; width: 204px; height: 48px; padding: 5px; background: #000000; color: #fff; border-radius: 999px; box-shadow: none; }
-    .pill div { width: 38px; height: 38px; border-radius: 999px; display: grid; place-items: center; }
-    .pill div.active { background: #222222; }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-    article { background: var(--sand-50); border: 1px solid var(--sand-600); border-radius: 16px; padding: 15px 17px 17px; }
-    .tag { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--vast-600); margin-bottom: 4px; }
-    strong { display: block; font-size: 15.5px; margin-bottom: 5px; color: var(--vast-950); }
-    p { margin: 0; font-size: 13px; line-height: 1.44; color: #464544; }
+    body { width: 1100px; height: 460px; padding: 22px 36px 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; }
+    h1 { margin: 0; font-family: Georgia, serif; font-size: 28px; font-weight: 500; letter-spacing: -0.025em; }
+    .lead { margin: 3px 0 0; color: var(--vast-600); font-size: 14px; }
+    
+    .showcase-split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .showcase-box { background: var(--sand-50); border: 1px solid var(--sand-600); border-radius: 18px; padding: 14px 20px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; position: relative; min-height: 140px; }
+    .box-header { display: flex; align-items: center; justify-content: space-between; width: 100%; border-bottom: 1px solid var(--sand-600); padding-bottom: 6px; margin-bottom: 2px; }
+    .box-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--vast-950); }
+    .box-tag { font-size: 11px; font-weight: 600; color: var(--vast-600); }
+    
+    .bubble-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; flex: 1; }
+    .tooltip-row { display: flex; gap: 10px; }
+    .tip { background: #000000; color: #ffffff; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+    .pill { display: flex; align-items: center; justify-content: center; gap: 6px; height: 42px; padding: 4px 8px; background: #000000; color: #fff; border-radius: 999px; }
+    .pill div { width: 34px; height: 34px; border-radius: 999px; display: grid; place-items: center; }
+    .pill div.active { background: #1f1f1f; }
+    
+    .edit-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; flex: 1; width: 100%; }
+    .edit-desc { font-size: 12.5px; color: var(--vast-600); text-align: center; line-height: 1.35; margin: 0; }
+    .manage-pill { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 5px 12px; background: #000000; border-radius: 999px; }
+    .manage-item { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+    .manage-item .icon-btn { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: transparent; }
+    .manage-item .minus-badge { position: absolute; top: -4px; right: -4px; width: 15px; height: 15px; border-radius: 50%; background: var(--red-500); color: #fff; font-size: 13px; font-weight: 700; line-height: 13px; display: grid; place-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    article { background: var(--sand-50); border: 1px solid var(--sand-600); border-radius: 14px; padding: 12px 14px 14px; }
+    .tag { display: inline-block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--vast-600); margin-bottom: 3px; }
+    strong { display: block; font-size: 14px; margin-bottom: 4px; color: var(--vast-950); }
+    p { margin: 0; font-size: 12px; line-height: 1.4; color: #464544; }
     svg { display: block; }
   </style>
 </head>
 <body>
   <div>
     <h1>Expanded Floating Bubble &amp; Symbols</h1>
-    <p class="lead">Pure dark-black shadowless dock at the bottom center of your screen. Expands only when the cursor enters its immediate vicinity and closes rapidly as you move away.</p>
+    <p class="lead">Pure dark-black dock at the bottom of your screen. Expands on proximity, snaps shut on departure, and fully customizable in Settings.</p>
   </div>
-  <div class="showcase">
-    <div class="tooltip-row">
-      <span class="tip">microphone</span>
-      <span class="tip">notes</span>
-      <span class="tip">home</span>
-      <span class="tip">screenshot</span>
+  <div class="showcase-split">
+    <!-- Left: Desktop Floating Bubble -->
+    <div class="showcase-box">
+      <div class="box-header">
+        <span class="box-title">Floating Bubble</span>
+        <span class="box-tag">Desktop View</span>
+      </div>
+      <div class="bubble-wrap">
+        <div class="tooltip-row">
+          <span class="tip">microphone</span>
+          <span class="tip">notes</span>
+          <span class="tip">home</span>
+          <span class="tip">screenshot</span>
+        </div>
+        <div class="pill">
+          <div class="active"><svg width="19" height="19" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg></div>
+          <div><svg width="19" height="19" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.75" y="2.25" width="10.5" height="13.5" rx="1.6"></rect><path d="M6.25 6.75h5.5M6.25 10h5.5"></path></svg></div>
+          <div><svg width="19" height="19" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.75 7.75 9 2.5l6.25 5.25"></path><path d="M4.25 6.75v7.5a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1v-7.5"></path><path d="M7.25 15.25v-4.25h3.5v4.25"></path></svg></div>
+          <div><svg width="19" height="19" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 6.4V3.2H6.4M11.6 3.2h3.2v3.2M14.8 11.6v3.2h-3.2M6.4 14.8H3.2v-3.2"></path><circle cx="9" cy="9" r="1.7"></circle></svg></div>
+        </div>
+      </div>
     </div>
-    <div class="pill">
-      <div class="active"><svg width="22" height="22" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg></div>
-      <div><svg width="22" height="22" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3.75" y="2.25" width="10.5" height="13.5" rx="1.6"></rect><path d="M6.25 6.75h5.5M6.25 10h5.5"></path></svg></div>
-      <div><svg width="22" height="22" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.75 7.75 9 2.5l6.25 5.25"></path><path d="M4.25 6.75v7.5a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1v-7.5"></path><path d="M7.25 15.25v-4.25h3.5v4.25"></path></svg></div>
-      <div><svg width="22" height="22" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 6.4V3.2H6.4M11.6 3.2h3.2v3.2M14.8 11.6v3.2h-3.2M6.4 14.8H3.2v-3.2"></path><circle cx="9" cy="9" r="1.7"></circle></svg></div>
+
+    <!-- Right: Edit Bubble / Manage Elements -->
+    <div class="showcase-box">
+      <div class="box-header">
+        <span class="box-title">Edit Bubble</span>
+        <span class="box-tag">Manage Elements</span>
+      </div>
+      <div class="edit-wrap">
+        <p class="edit-desc">Drag symbols to reorder, click − to remove, or add them back in Settings.</p>
+        <div class="manage-pill">
+          <div class="manage-item">
+            <span class="minus-badge">−</span>
+            <div class="icon-btn"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg></div>
+          </div>
+          <div class="manage-item">
+            <span class="minus-badge">−</span>
+            <div class="icon-btn"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.75" y="2.25" width="10.5" height="13.5" rx="1.6"></rect><path d="M6.25 6.75h5.5M6.25 10h5.5"></path></svg></div>
+          </div>
+          <div class="manage-item">
+            <span class="minus-badge">−</span>
+            <div class="icon-btn"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.75 7.75 9 2.5l6.25 5.25"></path><path d="M4.25 6.75v7.5a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1v-7.5"></path><path d="M7.25 15.25v-4.25h3.5v4.25"></path></svg></div>
+          </div>
+          <div class="manage-item">
+            <span class="minus-badge">−</span>
+            <div class="icon-btn"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 6.4V3.2H6.4M11.6 3.2h3.2v3.2M14.8 11.6v3.2h-3.2M6.4 14.8H3.2v-3.2"></path><circle cx="9" cy="9" r="1.7"></circle></svg></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <div class="grid">
-    <article><span class="tag">Hover: "microphone"</span><strong>Microphone</strong><p>Starts voice recording. Click again or press your shortcut to stop and paste into the active text field.</p></article>
-    <article><span class="tag">Hover: "notes"</span><strong>Notes</strong><p>Opens the minimalist floating note bubble right above the dock. All saved notes stay locally on your PC.</p></article>
-    <article><span class="tag">Hover: "home"</span><strong>Home</strong><p>Opens the main OpenFlow desktop application UI window directly to the foreground.</p></article>
-    <article><span class="tag">Hover: "screenshot"</span><strong>Screenshot</strong><p>Launches the bundled monochrome Flameshot region selector to annotate, copy, or save screenshots.</p></article>
+    <article><span class="tag">Symbol 1</span><strong>Microphone</strong><p>Starts voice recording. Click again or press your shortcut to stop and paste into the active text field.</p></article>
+    <article><span class="tag">Symbol 2</span><strong>Notes</strong><p>Opens the minimalist floating note bubble right above the dock. All saved notes stay locally on your PC.</p></article>
+    <article><span class="tag">Symbol 3</span><strong>Home</strong><p>Opens the main OpenFlow desktop application UI window directly to the foreground.</p></article>
+    <article><span class="tag">Symbol 4</span><strong>Screenshot</strong><p>Launches the bundled monochrome Flameshot region selector to annotate, copy, or save screenshots.</p></article>
   </div>
 </body>
 </html>

@@ -19,18 +19,10 @@ The compact dark-black floating bubble rests at the bottom of your screen. Hold 
 ## Floating Bubble & Symbols
 
 <p align="center">
-  <img src="docs/bubble.png" alt="Expanded OpenFlow floating bubble with hover labels and explanation for microphone, notes, home, and screenshot symbols." width="100%">
+  <img src="docs/bubble.png" alt="OpenFlow floating bubble on desktop and Edit Bubble Manage Elements customization panel." width="100%">
 </p>
 
-When idle, the floating bar collapses into a subtle, symmetrically clipped pure-black pill at the bottom of the screen. Moving your cursor into its immediate vicinity expands it to reveal four action icons, and moving away in any direction (horizontally or vertically) snaps it shut right away. Hovering over any icon cleanly displays its label (`microphone`, `notes`, `home`, `screenshot`) above the symbol.
-
-| Symbol | Hover Label | What It Does |
-| :--- | :--- | :--- |
-| **Microphone** | `microphone` | Starts voice recording immediately. Click again or press `Ctrl` + `Win` once to finish recording and transcribe. |
-| **Voice Note** | `take voice note` | Slides out to the left of the microphone when you hover it. Starts a recording (same bottom equalizer as `Ctrl` + `Win`) and opens a note pad that receives the transcribed text live. Click the pulsing **Voice active** button in the bottom-left of the pad to stop, then **Save** it like any other note. |
-| **Note** | `notes` | Opens the clean minimalist note-bubble window right above the floating bar (single note open, no tabs). |
-| **Home** | `home` | Opens the main OpenFlow desktop UI window directly. |
-| **Screenshot** | `screenshot` | Launches the bundled monochrome Flameshot region selector to capture, annotate, copy, or save a screenshot. |
+When idle, the floating bar collapses into a subtle, symmetrically clipped pure-black pill at the bottom of the screen. Moving your cursor into its immediate vicinity expands it to reveal your action icons, and moving away in any direction snaps it shut right away. In the Settings tab under **Manage Elements**, you can freely customize the bubble: remove unused icons, add them back, and drag symbols to reorder them live.
 
 ---
 
@@ -40,14 +32,14 @@ When idle, the floating bar collapses into a subtle, symmetrically clipped pure-
   <img src="docs/app.png" alt="OpenFlow Desktop UI in the Usage tab showing the left sidebar with top-aligned tabs, bottom Settings tab, 30-day audio/cost/word metrics, and activity bar chart." width="100%">
 </p>
 
-OpenFlow features a warm, distraction-free two-column layout (`820 × 540`) combining a clean navigation sidebar on the left (with `Dictation`, `Notes`, and `Usage` aligned at the top and `Settings` pinned cleanly at the bottom) and a spacious workspace on the right:
+OpenFlow features a warm, distraction-free two-column layout (`820 × 540`) combining a clean navigation sidebar on the left and a spacious workspace on the right:
 
-- **Dictation**: Displays your active dictation shortcut (`Ctrl + Win` by default, or `Ctrl + Space`, `Ctrl + Alt`, `Ctrl + Shift`), the latest transcription with a one-click **Copy** button, and your recent dictation history.
-- **Notes**: Lists all saved notes vertically in proportional, rounded cards with a clean trash icon on the right (asking for confirmation before deleting). Clicking any note—or the floating round pen-and-paper compose button in the bottom right—opens the minimalist note-bubble card over the entire Notes area (editable note title on top, no tabs, max 1 note open, with **`Back`**, **`Copy`**, and **`Save`** actions). Unsaved notes are never persisted unless you explicitly click **`Save`**, which saves your changes and returns to the Notes list.
-- **Usage**: Summarizes your last 30 days of activity—total recorded minutes, estimated API cost, and total spoken words—paired with an activity bar chart computed locally from your saved dictations.
-- **Settings**:
-  - **Speech-to-Text Engine**: Switch anytime between **Parakeet v3 (Open-Source, Local)** and **OpenAI API (`gpt-transcribe`)**, and manage your optional OpenAI API key. Right after installation, OpenFlow checks whether the **Parakeet v3** model is already installed—if not, it shows a dedicated **`Installing open-source STT model`** progress window in MB before launching the UI with the onboarding prompt.
-  - **Dictation**: Choose your global dictation shortcut between **`Ctrl + Win` (Default)**, **`Ctrl + Space`**, **`Ctrl + Alt`**, or **`Ctrl + Shift`**, and use the mode toggle switch to switch between **Hold Shortcut to Dictate** (hold to speak, release to finish) and **Press Once to Start / Second Time to Stop**.
+| Workspace Tab | Features & Description |
+| :--- | :--- |
+| **Dictation** | Displays your active dictation shortcut (`Ctrl` + `Win` by default, or `Ctrl` + `Space`, `Ctrl` + `Alt`, `Ctrl` + `Shift`), the latest transcription with a one-click **Copy** button, and your recent dictation history. |
+| **Notes** | Lists all saved notes vertically in proportional, rounded cards with a clean trash icon on the right (asking for confirmation before deleting). Clicking any note—or the floating round pen-and-paper compose button in the bottom right—opens the minimalist note-bubble card over the entire Notes area (editable note title on top, no tabs, max 1 note open, with **`Back`**, **`Copy`**, and **`Save`** actions). Unsaved notes are never persisted unless you explicitly click **`Save`**, which saves your changes and returns to the Notes list. |
+| **Usage** | Summarizes your last 30 days of activity—total recorded minutes, estimated API cost, and total spoken words—paired with an activity bar chart computed locally from your saved dictations. |
+| **Settings** | • **Speech-to-Text Engine**: Switch anytime between **Parakeet v3 (Open-Source, Local)** and **OpenAI API (`gpt-transcribe`)**, and manage your optional OpenAI API key. Right after installation, OpenFlow checks whether the **Parakeet v3** model is already installed—if not, it shows a dedicated **`Installing open-source STT model`** progress window in MB before launching the UI with the onboarding prompt.<br><br>• **Dictation**: Choose your global dictation shortcut between **`Ctrl + Win` (Default)**, **`Ctrl + Space`**, **`Ctrl + Alt`**, or **`Ctrl + Shift`**, and use the mode toggle switch to switch between **Hold Shortcut to Dictate** (hold to speak, release to finish) and **Press Once to Start / Second Time to Stop**.<br><br>• **Floating Bubble & Manage Elements**: Select bubble appearance (**Active**, **Grayed Out**, or **Hidden** with shortcut-only dictation) and customize your bubble icons (drag to reorder, click − to remove, add back). |
 
 ---
 
@@ -85,7 +77,7 @@ OpenFlow has **zero subscriptions or middleman fees**:
 
 Download the latest Windows installer from the [**Releases**](https://github.com/LuiInventions/OpenFlow/releases) page:
 
-- **`OpenFlow-Setup-1.2.3.exe`** — Lightweight Windows NSIS Web/Stub Installer (~1 MB download) with customizable install directory, Start Menu entry, and Desktop shortcut. Automatically fetches the application package from GitHub Releases during setup, checks whether **Parakeet v3** is already installed (skipping download if present, or showing a live MB progress bar), and then opens the UI so you can choose **Local (Parakeet v3)** or **OpenAI API**.
+- **`OpenFlow-Setup-1.2.4.exe`** — Lightweight Windows NSIS Web/Stub Installer (~1 MB download) with customizable install directory, Start Menu entry, and Desktop shortcut. Automatically fetches the application package from GitHub Releases during setup, checks whether **Parakeet v3** is already installed (skipping download if present, or showing a live MB progress bar), and then opens the UI so you can choose **Local (Parakeet v3)** or **OpenAI API**.
 
 Requirements: Windows 10 or Windows 11 (64-bit). An OpenAI API key is optional.
 
@@ -99,7 +91,7 @@ npm test
 npm run dist
 ```
 
-This builds the Windows NSIS Web Stub installer (`release/OpenFlow-Setup-1.2.3.exe`).
+This builds the Windows NSIS Web Stub installer (`release/OpenFlow-Setup-1.2.4.exe`).
 
 ---
 
