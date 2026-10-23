@@ -156,7 +156,51 @@
       if (width === placedW && height === placedH) return;
       placedW = width;
       placedH = height;
-      if (window.openflow) window.openflow.dispatch("bar.mode", { width, height, menuOpen });
+      resizeHidden(width, height);
+    }
+
+    // Resizing a transparent window on Windows briefly presents the previous frame
+    // anchored at the top-left of the new bounds, which flashes a misplaced piece of
+    // the bar. Hide the content, wait until the hidden frame is on screen, resize,
+    // and only reveal once the window really has the new size and has been repainted.
+    let resizeGen = 0;
+    let revealTimer = 0;
+    function nextFrames(count, done) {
+      if (count <= 0) { done(); return; }
+      requestAnimationFrame(() => nextFrames(count - 1, done));
+    }
+    function reveal(gen) {
+      if (gen !== resizeGen) return;
+      clearTimeout(revealTimer);
+      window.removeEventListener("resize", onResize);
+      document.body.style.visibility = "";
+    }
+    function sizedTo(width, height) {
+      // Fractional display scaling can round the CSS viewport by a pixel.
+      return Math.abs(window.innerWidth - width) <= 2 && Math.abs(window.innerHeight - height) <= 2;
+    }
+    function onResize() {
+      const gen = resizeGen;
+      if (!sizedTo(placedW, placedH)) return;
+      nextFrames(2, () => reveal(gen));
+    }
+    function resizeHidden(width, height) {
+      const gen = ++resizeGen;
+      document.body.style.visibility = "hidden";
+      clearTimeout(revealTimer);
+      revealTimer = setTimeout(() => reveal(gen), 300);
+      window.removeEventListener("resize", onResize);
+      let sent = false;
+      const send = () => {
+        if (sent || gen !== resizeGen) return;
+        sent = true;
+        window.addEventListener("resize", onResize);
+        if (window.openflow) window.openflow.dispatch("bar.mode", { width, height, menuOpen });
+        if (sizedTo(width, height)) onResize();
+      };
+      // rAF may stall while the window is hidden; never let that block the resize.
+      setTimeout(send, 60);
+      nextFrames(2, send);
     }
 
     function paint() {
