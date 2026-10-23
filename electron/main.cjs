@@ -137,9 +137,9 @@ function rememberTarget(hwnd) {
 
 function beginDictate(hwnd, source) {
   const mode = store && store.getSettings().dictationMode === "toggle" ? "toggle" : "hold";
-  const next = source === "symbol" ? "symbol" : (mode === "toggle" ? "toggle" : "chord");
+  const next = source === "symbol" || source === "voicenote" ? source : (mode === "toggle" ? "toggle" : "chord");
   if (dictating) {
-    if ((dictateSource === "symbol" || dictateSource === "toggle") && next !== "symbol") {
+    if ((dictateSource === "symbol" || dictateSource === "toggle" || dictateSource === "voicenote") && next !== "symbol" && next !== "voicenote") {
       endDictate();
     }
     return;
@@ -156,8 +156,27 @@ function endDictate() {
   const source = dictateSource;
   dictating = false;
   dictateSource = "";
-  if (source === "symbol") pointerNear = false;
+  if (source === "symbol" || source === "voicenote") pointerNear = false;
+  if (source === "voicenote") sendNoteVoice({ type: "stopped" });
   sendBar({ type: "stop", source });
+}
+
+function sendNoteVoice(message) {
+  if (!noteWindow || noteWindow.isDestroyed()) return;
+  const deliver = () => {
+    if (noteWindow && !noteWindow.isDestroyed()) noteWindow.webContents.send("note-voice", message);
+  };
+  if (noteWindow.webContents.isLoading()) noteWindow.webContents.once("did-finish-load", deliver);
+  else deliver();
+}
+
+// Voice note: open a fresh note pad and stream the dictation into it instead of pasting.
+function startVoiceNote() {
+  if (dictating) return false;
+  showNotePad("");
+  sendNoteVoice({ type: "start" });
+  beginDictate(0, "voicenote");
+  return true;
 }
 
 function needsKeyPrompt() {
@@ -398,7 +417,7 @@ function watchPointer() {
     const area = screen.getPrimaryDisplay().workArea;
     const center = area.x + area.width / 2;
     const bottom = area.y + area.height;
-    const reachX = pointerNear ? (barMenuOpen ? 156 : 86) : 44;
+    const reachX = pointerNear ? (barMenuOpen ? 156 : 116) : 44;
     const reachY = pointerNear ? (barMenuOpen ? 330 : 58) : 36;
     const hit = Math.abs(cursor.x - center) <= reachX && bottom - cursor.y <= reachY && bottom - cursor.y >= -18;
     if (hit === pointerNear) return;
@@ -696,7 +715,7 @@ function enqueueSpeech(work) {
   return run;
 }
 
-function openSpeechSession() {
+function openSpeechSession(payload) {
   const token = crypto.randomUUID();
   const now = Date.now();
   for (const [key, session] of speechSessions) {
@@ -710,8 +729,17 @@ function openSpeechSession() {
     language: "",
     pending: Promise.resolve(),
     failed: null,
+    voice: Boolean(payload && payload.voice),
   });
   return { token };
+}
+
+function liveVoiceText(raw) {
+  let text = String(raw || "").trim();
+  try {
+    text = flow.prepareTranscript(text, library()).text || text;
+  } catch (_error) {}
+  if (text) sendNoteVoice({ type: "text", text });
 }
 
 async function commitTranscript(raw, prepared, meta) {
@@ -1058,7 +1086,21 @@ const actions = {
     return true;
   },
   "shot.open": () => openFlameshot(),
+  "voicenote.start": () => startVoiceNote(),
+  "voicenote.stop": () => {
+    if (dictating && dictateSource === "voicenote") endDictate();
+    return true;
+  },
+  "voicenote.done": (payload) => {
+    if (dictating && dictateSource === "voicenote") {
+      dictating = false;
+      dictateSource = "";
+    }
+    sendNoteVoice({ type: "done", error: payload && payload.error ? String(payload.error) : "" });
+    return true;
+  },
   "note.close": () => {
+    if (dictating && dictateSource === "voicenote") endDictate();
     if (noteWindow && !noteWindow.isDestroyed()) noteWindow.hide();
     return true;
   },
@@ -1158,7 +1200,7 @@ const actions = {
       overlay: false,
     });
   },
-  "speech.session": () => openSpeechSession(),
+  "speech.session": (payload) => openSpeechSession(payload),
   "speech.part": (payload) => {
     const session = speechSessions.get(payload.token);
     if (!session) throw new Error("Recording session expired.");
@@ -1175,6 +1217,7 @@ const actions = {
         if (sttEngine === "parakeet") {
           const result = await parakeet.transcribeWav(bytes, app.getPath("userData"));
           if (result.text) session.texts.push(result.text);
+          if (result.text && session.voice) liveVoiceText(result.text);
           if (result.language) session.language = result.language;
         } else {
           const body = await providers.postTranscription(fetch, () => providers.transcriptionRequest({
@@ -1187,6 +1230,7 @@ const actions = {
           const text = providers.parseTranscription(body);
           const language = providers.detectedLanguage(body);
           if (text) session.texts.push(text);
+          if (text && session.voice) liveVoiceText(text);
           if (language) session.language = language;
         }
       } catch (error) {
@@ -1205,12 +1249,12 @@ const actions = {
     if (!raw) return { empty: true, text: "" };
     const prepared = flow.prepareTranscript(raw, library());
     return commitTranscript(raw, prepared, {
-      appName: payload.appName,
+      appName: session.voice ? "Voice note" : payload.appName,
       url: payload.url,
       durationMs: payload.durationMs || 0,
       language: session.language,
       sttEngine: session.sttEngine,
-      paste: true,
+      paste: !session.voice,
       overlay: false,
     });
   }),

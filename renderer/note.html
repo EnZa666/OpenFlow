@@ -119,6 +119,33 @@
     }
     #copy:hover { background: var(--sand-600); }
     #copy.copied { background: var(--green-50); color: var(--green-600); border-color: var(--green-600); }
+    #voice {
+      margin-right: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 14px 7px 11px;
+      border-radius: 999px;
+      background: #0a0a0a;
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 600;
+      letter-spacing: .01em;
+      border: 1px solid #0a0a0a;
+      transition: background-color .15s ease, opacity .15s ease;
+    }
+    #voice:hover:not(:disabled) { background: #222; }
+    #voice:disabled { cursor: default; opacity: .75; }
+    #voice .dot { position: relative; width: 9px; height: 9px; border-radius: 50%; background: #ef4444; flex: 0 0 9px; }
+    #voice .dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: #ef4444; animation: vpulse 1.3s ease-out infinite; }
+    #voice .stop { display: none; width: 8px; height: 8px; border-radius: 2px; background: #fff; }
+    #voice:hover:not(:disabled) .dot { display: none; }
+    #voice:hover:not(:disabled) .stop { display: block; }
+    #voice.busy .dot { background: transparent; border: 1.5px solid rgba(255,255,255,.3); border-top-color: #fff; box-sizing: border-box; animation: vspin .7s linear infinite; }
+    #voice.busy .dot::after { display: none; }
+    @keyframes vpulse { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(2.6); opacity: 0; } }
+    @keyframes vspin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { #voice .dot::after { animation: none; } }
   </style>
 </head>
 <body>
@@ -129,12 +156,69 @@
     </header>
     <textarea id="body" placeholder="Write or dictate a note..."></textarea>
     <footer>
+      <button id="voice" type="button" hidden title="Stop recording"><span class="dot"></span><span class="stop"></span><span id="voice-label">Voice active</span></button>
       <button id="copy" type="button">Copy</button>
       <button id="save" type="button">Save</button>
     </footer>
   </div>
   <script>
     let currentNote = { id: "", title: "Note", content: "" };
+    const voiceButton = document.querySelector("#voice");
+    const voiceLabel = document.querySelector("#voice-label");
+    const bodyField = document.querySelector("#body");
+    const idlePlaceholder = bodyField.placeholder;
+    let voiceState = "off";
+    let voiceWaiters = [];
+
+    function setVoiceState(next) {
+      voiceState = next;
+      voiceButton.hidden = next === "off";
+      voiceButton.disabled = next === "busy";
+      voiceButton.classList.toggle("busy", next === "busy");
+      voiceLabel.textContent = next === "busy" ? "Transcribing..." : "Voice active";
+      voiceButton.title = next === "active" ? "Stop recording" : "";
+      bodyField.placeholder = next === "active" ? "Listening..." : idlePlaceholder;
+      if (next === "off") {
+        const waiters = voiceWaiters;
+        voiceWaiters = [];
+        waiters.forEach((resolve) => resolve());
+      }
+    }
+
+    function appendVoice(text) {
+      const clean = String(text || "").trim();
+      if (!clean) return;
+      const current = bodyField.value;
+      const gap = current && !/\s$/.test(current) ? " " : "";
+      bodyField.value = current + gap + clean;
+      bodyField.scrollTop = bodyField.scrollHeight;
+      if (document.activeElement === bodyField) {
+        bodyField.selectionStart = bodyField.selectionEnd = bodyField.value.length;
+      }
+    }
+
+    function onVoice(message) {
+      if (!message) return;
+      if (message.type === "start") setVoiceState("active");
+      if (message.type === "text") appendVoice(message.text);
+      if (message.type === "stopped" && voiceState === "active") setVoiceState("busy");
+      if (message.type === "done") setVoiceState("off");
+    }
+
+    // Stop a running voice note and wait until its last words have landed in the pad.
+    function finishVoice() {
+      if (voiceState === "off" || !window.openflow) return Promise.resolve();
+      const done = new Promise((resolve) => {
+        voiceWaiters.push(resolve);
+        setTimeout(resolve, 20000);
+      });
+      if (voiceState === "active") window.openflow.dispatch("voicenote.stop").catch(() => {});
+      return done;
+    }
+
+    voiceButton.addEventListener("click", () => {
+      if (voiceState === "active" && window.openflow) window.openflow.dispatch("voicenote.stop").catch(() => {});
+    });
 
     async function onShow(data) {
       const wantedId = data && data.id ? String(data.id) : "";
@@ -175,9 +259,10 @@
       const titleInput = document.querySelector("#title");
       const bodyInput = document.querySelector("#body");
       const nextTitle = titleInput && titleInput.value.trim() ? titleInput.value.trim() : "Note";
-      const nextContent = bodyInput ? bodyInput.value : "";
       const button = document.querySelector("#save");
       button.disabled = true;
+      await finishVoice();
+      const nextContent = bodyInput ? bodyInput.value : "";
       button.textContent = "Saved ✓";
       button.classList.add("saved");
       const saved = await window.openflow.dispatch("pads.save", {
@@ -195,6 +280,7 @@
 
     if (window.openflow) {
       window.openflow.on("note-show", onShow);
+      window.openflow.on("note-voice", onVoice);
       onShow({});
     }
   </script>
