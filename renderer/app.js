@@ -25,7 +25,7 @@ const BUBBLE_ELEMENT_DEFS = {
   voice: {
     id: "voice",
     name: "Voice & Note",
-    html: `<div class="elem-voice-combo" aria-hidden="true"><div class="elem-vtrack"></div><div class="elem-vnote"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.1" stroke="currentColor" stroke-width="1.7"></circle><circle cx="8" cy="8" r="2.7" fill="currentColor"></circle></svg></div><div class="elem-mic"><svg width="15" height="15" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg></div></div>`,
+    html: `<div class="elem-voice-combo" aria-hidden="true"><div class="elem-vtrack"></div><div class="elem-vnote"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.1" stroke="currentColor" stroke-width="1.7"></circle><circle cx="8" cy="8" r="2.7" fill="currentColor"></circle></svg></div><div class="elem-mic"><svg width="15" height="15" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg></div></div>`,
     miniIcon: `<svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg>`,
   },
   note: {
@@ -303,9 +303,9 @@ function settingsHtml() {
         const def = BUBBLE_ELEMENT_DEFS[k];
         return `<button type="button" class="removed-elem-btn" data-elem-add="${k}" title="Add back ${def.name}">${def.miniIcon}<span>${def.name}</span><span class="elem-plus-badge">+</span></button>`;
       }).join("")}</div></div>`
-    : `<div class="removed-elements-shelf"><span class="shelf-label">All elements are active in the floating bubble.</span></div>`;
+    : "";
 
-  const manageCard = `<div class="settings-card manage-elements-card"><div class="section-label">Manage Elements</div><div class="bubble-preview-wrap"><span class="bubble-preview-label">Opened Bubble Preview — Drag to reorder, click − to remove</span><div class="bubble-preview-pill" id="bubble-preview-pill">${previewItemsHtml}</div></div>${removedShelfHtml}<div class="bubble-manage-actions"><button type="button" class="btn-secondary" id="bubble-reset">Reset to Default</button><button type="button" class="btn-primary" id="bubble-save">Save Changes</button></div></div>`;
+  const manageCard = `<div class="settings-card manage-elements-card"><div class="section-label">Manage Elements</div><div class="bubble-preview-wrap"><div class="bubble-preview-pill" id="bubble-preview-pill">${previewItemsHtml}</div></div>${removedShelfHtml}<div class="bubble-manage-actions"><button type="button" class="btn-secondary" id="bubble-reset">Reset to Default</button><button type="button" class="btn-primary" id="bubble-save">Save Changes</button></div></div>`;
 
   return `${sttCard}${dictationCard}${bubbleCard}${manageCard}`;
 }
@@ -522,6 +522,8 @@ document.addEventListener("DOMContentLoaded", () => {
       bubbleSave.textContent = "Saved ✓";
       bubbleSave.classList.add("saved");
       await new Promise((r) => setTimeout(r, 600));
+      state.draftBubbleElements = null;
+      state.draftFloatingBubble = null;
       await load();
       return;
     }

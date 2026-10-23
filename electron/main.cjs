@@ -150,6 +150,11 @@ function beginDictate(hwnd, source) {
   dictating = true;
   dictateSource = next;
   unmuteMic();
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    if (!overlayWindow.isVisible()) overlayWindow.showInactive();
+    overlayWindow.setOpacity(1);
+    overlayWindow.setIgnoreMouseEvents(false);
+  }
   sendBar({ type: "start", source: next });
 }
 
@@ -531,15 +536,13 @@ function applyFloatingBubbleState() {
   const elements = Array.isArray(settings.bubbleElements) && settings.bubbleElements.length
     ? settings.bubbleElements
     : ["voice", "note", "tune", "shot"];
-  if (mode === "hidden") {
-    overlayWindow.setIgnoreMouseEvents(true);
-    overlayWindow.setOpacity(0);
+  overlayWindow.setOpacity(1);
+  if (mode === "hidden" && !dictating) {
+    overlayWindow.setIgnoreMouseEvents(true, { forward: true });
   } else {
     overlayWindow.setIgnoreMouseEvents(false);
-    overlayWindow.setOpacity(1);
-    const isHidden = (store && store.getSettings().floatingBubble) === "hidden";
-  if (!isHidden && !overlayWindow.isVisible()) overlayWindow.showInactive();
   }
+  if (!overlayWindow.isVisible()) overlayWindow.showInactive();
   sendBar({
     type: "config",
     floatingBubble: mode,
@@ -552,8 +555,7 @@ function sendOverlay(state) {
   clearTimeout(overlayTimer);
   const mode = !state || !state.mode || state.mode === "hidden" ? "idle" : state.mode;
   const next = { ...state, mode, sounds: true };
-  const isHidden = (store && store.getSettings().floatingBubble) === "hidden";
-  if (!isHidden && !overlayWindow.isVisible()) overlayWindow.showInactive();
+  if (!overlayWindow.isVisible()) overlayWindow.showInactive();
   const deliver = () => {
     if (!overlayWindow.isDestroyed()) overlayWindow.webContents.send("overlay-state", next);
   };
@@ -939,8 +941,10 @@ function delay(ms) {
 function restoreBar() {
   if (!overlayWindow || overlayWindow.isDestroyed()) return;
   overlayWindow.setOpacity(1);
+  if (!overlayWindow.isVisible()) overlayWindow.showInactive();
   const isHidden = (store && store.getSettings().floatingBubble) === "hidden";
-  if (!isHidden && !overlayWindow.isVisible()) overlayWindow.showInactive();
+  if (isHidden && !dictating) overlayWindow.setIgnoreMouseEvents(true, { forward: true });
+  else overlayWindow.setIgnoreMouseEvents(false);
 }
 
 function writeIniPairs(file, pairs) {
@@ -1134,7 +1138,12 @@ const actions = {
     }
     if (hidingBar) return true;
     placeBar(payload.width, payload.height);
-    if (overlayWindow && !overlayWindow.isDestroyed() && !overlayWindow.isVisible()) overlayWindow.showInactive();
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      if (!overlayWindow.isVisible()) overlayWindow.showInactive();
+      const isHidden = (store && store.getSettings().floatingBubble) === "hidden";
+      if (isHidden && !dictating) overlayWindow.setIgnoreMouseEvents(true, { forward: true });
+      else overlayWindow.setIgnoreMouseEvents(false);
+    }
     return true;
   },
   "note.open": () => openFreshNote(),

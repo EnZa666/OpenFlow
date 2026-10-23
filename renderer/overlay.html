@@ -53,17 +53,15 @@
     }
     /* Voice note: a dark slider track that slides out to the left of the mic. */
     .voice-group { position: relative; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .vtrack { position: absolute; z-index: 0; top: 0; right: 0; width: 30px; height: 30px; box-sizing: border-box; border-radius: 999px; background: #050505; border: 1px solid #1c1c1c; opacity: 0; pointer-events: none; transition: width .22s cubic-bezier(.2,.8,.2,1), opacity .16s ease; }
-    .pill.voice-open .vtrack { width: 66px; opacity: 1; pointer-events: auto; }
+    .vtrack { position: absolute; z-index: 0; top: 0; right: 0; width: 30px; height: 30px; box-sizing: border-box; border-radius: 999px; background: #141414; border: none; opacity: 0; pointer-events: none; transition: width .22s cubic-bezier(.2,.8,.2,1), opacity .16s ease; }
+    .pill.voice-open .vtrack { width: 64px; opacity: 1; pointer-events: auto; }
     #mic { position: relative; z-index: 1; }
-    .pill.voice-open #mic { background: #1f1f1f; box-shadow: 0 0 0 1px #2a2a2a; }
+    .pill.voice-open #mic { background: #1f1f1f; box-shadow: none; }
 
-    #vnote { position: absolute; z-index: 1; top: 2px; left: -34px; width: 26px; height: 26px; background: #000; opacity: 0; pointer-events: none; transform: translateX(20px) scale(.6); transition: opacity .16s ease, transform .22s cubic-bezier(.2,.8,.2,1), background-color .14s ease; }
+    #vnote { position: absolute; z-index: 1; top: 0; left: -34px; width: 30px; height: 30px; border-radius: 999px; background: #141414; opacity: 0; pointer-events: none; transform: translateX(18px) scale(.7); transition: opacity .16s ease, transform .22s cubic-bezier(.2,.8,.2,1), background-color .14s ease; }
     .pill.voice-open #vnote { opacity: 1; pointer-events: auto; transform: translateX(0) scale(1); }
+    #vnote:hover { background: #222222; }
 
-    #vnote:hover { background: #161616; }
-    #vnote::after { left: 0; transform: translateY(3px); }
-    #vnote:hover::after, #vnote:focus-visible::after { transform: translateY(0); }
     /* Floating bubble appearance states */
     body[data-bubble-style="dimmed"] #grip { opacity: 0.35; filter: grayscale(1); background: #555555; transition: opacity .18s ease, filter .18s ease, background-color .18s ease; }
     body[data-bubble-style="dimmed"] #grip:hover, body[data-bubble-style="dimmed"][data-near="true"] #grip { opacity: 0.85; filter: grayscale(0); background: #000000; }
@@ -72,7 +70,8 @@
     body[data-bubble-style="dimmed"][data-near="true"] .pill,
     body[data-bubble-style="dimmed"][data-mode="listening"] .pill,
     body[data-bubble-style="dimmed"][data-mode="working"] .pill { opacity: 1; filter: grayscale(0); }
-    body[data-bubble-style="hidden"] { opacity: 0 !important; pointer-events: none !important; }
+    body[data-bubble-style="hidden"] #grip { display: none !important; }
+    body[data-bubble-style="hidden"]:not([data-mode="listening"]):not([data-mode="working"]) { opacity: 0 !important; pointer-events: none !important; }
 
 
 
@@ -120,7 +119,7 @@
       <div class="voice-group" id="voice-group">
         <div class="vtrack" id="vtrack" aria-hidden="true"></div>
       <button id="vnote" type="button" aria-label="take voice note" data-tooltip="take voice note" tabindex="-1">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.1" stroke="currentColor" stroke-width="1.7"></circle><circle cx="8" cy="8" r="2.7" fill="currentColor"></circle></svg>
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.1" stroke="currentColor" stroke-width="1.7"></circle><circle cx="8" cy="8" r="2.7" fill="currentColor"></circle></svg>
       </button>
       <button id="mic" type="button" aria-label="microphone" data-tooltip="microphone">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg>
@@ -257,6 +256,13 @@
         shot: shot,
       };
       const activeIds = Array.isArray(bubbleElements) && bubbleElements.length ? bubbleElements : ["voice", "note", "tune", "shot"];
+      Object.keys(elemMap).forEach((id) => {
+        const el = elemMap[id];
+        if (!el) return;
+        if (!activeIds.includes(id)) {
+          el.hidden = true;
+        }
+      });
       activeIds.forEach((id) => {
         const el = elemMap[id];
         if (el && pill && status) pill.insertBefore(el, status);
@@ -270,13 +276,27 @@
       const isHidden = floatingBubble === "hidden";
       grip.hidden = isHidden || open || busy;
       pill.hidden = !open && !busy;
-      note.hidden = !open;
-      tune.hidden = !open;
-      shot.hidden = !open;
-      mic.hidden = !open;
-      vnote.hidden = !open;
-      vtrack.hidden = !open;
-      if (!open) setVoiceOpen(false);
+
+      const activeIds = Array.isArray(bubbleElements) && bubbleElements.length ? bubbleElements : ["voice", "note", "tune", "shot"];
+      const elemMap = {
+        voice: voiceGroup,
+        note: note,
+        tune: tune,
+        shot: shot,
+      };
+      Object.keys(elemMap).forEach((id) => {
+        const el = elemMap[id];
+        if (!el) return;
+        const isActive = activeIds.includes(id);
+        el.hidden = !open || !isActive;
+      });
+
+      const voiceActive = activeIds.includes("voice");
+      mic.hidden = !open || !voiceActive;
+      vnote.hidden = !open || !voiceActive;
+      vtrack.hidden = !open || !voiceActive;
+      if (!open || !voiceActive) setVoiceOpen(false);
+
       status.hidden = !busy;
       document.querySelector(".eq").hidden = mode !== "listening";
       document.querySelector("#spin").hidden = mode !== "working";

@@ -1061,7 +1061,7 @@ label.key input:focus, .onboard-input:focus {
 }
 
 .bubble-preview-wrap {
-  padding: 22px 20px;
+  padding: 16px 20px;
   border-radius: 14px;
   background: var(--sand-500);
   border: 1px dashed var(--sand-600);
@@ -1071,7 +1071,7 @@ label.key input:focus, .onboard-input:focus {
   justify-content: center;
   gap: 12px;
   position: relative;
-  min-height: 105px;
+  min-height: 72px;
 }
 
 .bubble-preview-label {
@@ -1136,13 +1136,13 @@ label.key input:focus, .onboard-input:focus {
   background: #1f1f1f;
 }
 
-/* Voice combo: ausgeklappter voice note slider at 1/2 distance */
+/* Voice combo: ausgeklappter voice note slider */
 .elem-voice-combo {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 66px;
+  width: 64px;
   height: 30px;
 }
 
@@ -1150,20 +1150,20 @@ label.key input:focus, .onboard-input:focus {
   position: absolute;
   top: 0;
   right: 0;
-  width: 66px;
+  width: 64px;
   height: 30px;
   border-radius: 999px;
-  background: #050505;
-  border: 1px solid #1c1c1c;
+  background: #141414;
+  border: none;
 }
 
 .elem-vnote {
   position: absolute;
-  left: 3px;
-  width: 24px;
-  height: 24px;
+  left: 2px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: #000000;
+  background: #141414;
   color: #ffffff;
   display: grid;
   place-items: center;
@@ -1172,12 +1172,12 @@ label.key input:focus, .onboard-input:focus {
 
 .elem-mic {
   position: absolute;
-  right: 3px;
+  right: 2px;
   width: 26px;
   height: 26px;
   border-radius: 50%;
   background: #1f1f1f;
-  box-shadow: 0 0 0 1px #2a2a2a;
+  box-shadow: none;
   color: #ffffff;
   display: grid;
   place-items: center;
