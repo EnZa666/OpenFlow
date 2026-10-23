@@ -924,11 +924,15 @@ label.key input:focus, .onboard-input:focus {
   opacity: 0.92;
 }
 
-#editor-save.saved {
-  background: var(--green-50);
-  color: var(--green-600);
-  border-color: var(--green-600);
-  outline: none;
+#editor-save.saved,
+#save-key.saved,
+.btn-primary.saved,
+.btn-secondary.saved,
+button.saved {
+  background: #16a34a !important;
+  color: #ffffff !important;
+  border-color: #16a34a !important;
+  outline: none !important;
 }
 
 /* Post-Installer Onboarding Modal */
@@ -1142,7 +1146,7 @@ label.key input:focus, .onboard-input:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
+  width: 58px;
   height: 30px;
 }
 
@@ -1150,10 +1154,10 @@ label.key input:focus, .onboard-input:focus {
   position: absolute;
   top: 0;
   right: 0;
-  width: 64px;
+  width: 58px;
   height: 30px;
   border-radius: 999px;
-  background: #141414;
+  background: #000000;
   border: none;
 }
 
@@ -1163,7 +1167,7 @@ label.key input:focus, .onboard-input:focus {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: #141414;
+  background: #000000;
   color: #ffffff;
   display: grid;
   place-items: center;
@@ -1290,9 +1294,10 @@ label.key input:focus, .onboard-input:focus {
 }
 
 .bubble-manage-actions .btn-primary.saved {
-  background: #ecfdf5;
-  color: #059669;
-  border-color: #059669;
+  background: #16a34a !important;
+  color: #ffffff !important;
+  border-color: #16a34a !important;
+  outline: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -140,9 +140,16 @@ async function saveApiKey() {
   if (!key) return;
   const value = key.value.trim();
   if (!value) return;
+  const saveKeyBtn = document.querySelector("#save-key");
+  if (saveKeyBtn) {
+    saveKeyBtn.disabled = true;
+    saveKeyBtn.textContent = "Saved ✓";
+    saveKeyBtn.classList.add("saved");
+  }
   await window.openflow.dispatch("settings.save", { apiKey: value, onboardingDone: true });
   key.value = "";
   state.askKey = false;
+  await new Promise((r) => setTimeout(r, 600));
   await load();
 }
 

@@ -436,7 +436,7 @@ function watchPointer() {
     const area = screen.getPrimaryDisplay().workArea;
     const center = area.x + area.width / 2;
     const bottom = area.y + area.height;
-    const reachX = pointerNear ? (barMenuOpen ? 156 : 116) : 44;
+    const reachX = pointerNear ? (barMenuOpen ? 156 : 140) : 44;
     const reachY = pointerNear ? (barMenuOpen ? 330 : 58) : 36;
     const hit = Math.abs(cursor.x - center) <= reachX && bottom - cursor.y <= reachY && bottom - cursor.y >= -18;
     if (hit === pointerNear) return;

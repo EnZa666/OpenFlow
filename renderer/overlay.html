@@ -53,14 +53,16 @@
     }
     /* Voice note: a dark slider track that slides out to the left of the mic. */
     .voice-group { position: relative; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .vtrack { position: absolute; z-index: 0; top: 0; right: 0; width: 30px; height: 30px; box-sizing: border-box; border-radius: 999px; background: #141414; border: none; opacity: 0; pointer-events: none; transition: width .22s cubic-bezier(.2,.8,.2,1), opacity .16s ease; }
-    .pill.voice-open .vtrack { width: 64px; opacity: 1; pointer-events: auto; }
+    .vtrack { position: absolute; z-index: 0; top: 0; right: 0; width: 30px; height: 30px; box-sizing: border-box; border-radius: 999px; background: #000000; border: none; opacity: 0; pointer-events: none; transition: width .22s cubic-bezier(.2,.8,.2,1), opacity .16s ease; }
+    .pill.voice-open .vtrack { width: 62px; opacity: 1; pointer-events: auto; }
     #mic { position: relative; z-index: 1; }
     .pill.voice-open #mic { background: #1f1f1f; box-shadow: none; }
 
-    #vnote { position: absolute; z-index: 1; top: 0; left: -34px; width: 30px; height: 30px; border-radius: 999px; background: #141414; opacity: 0; pointer-events: none; transform: translateX(18px) scale(.7); transition: opacity .16s ease, transform .22s cubic-bezier(.2,.8,.2,1), background-color .14s ease; }
+    #vnote { position: absolute; z-index: 1; top: 0; left: -32px; width: 30px; height: 30px; border-radius: 999px; background: #000000; opacity: 0; pointer-events: none; transform: translateX(16px) scale(.7); transition: opacity .16s ease, transform .22s cubic-bezier(.2,.8,.2,1), background-color .14s ease; }
     .pill.voice-open #vnote { opacity: 1; pointer-events: auto; transform: translateX(0) scale(1); }
-    #vnote:hover { background: #222222; }
+    #vnote:hover { background: #1f1f1f; }
+    #vnote::after { left: -6px; transform: translateY(3px); }
+    #vnote:hover::after, #vnote:focus-visible::after { transform: translateY(0); }
 
     /* Floating bubble appearance states */
     body[data-bubble-style="dimmed"] #grip { opacity: 0.35; filter: grayscale(1); background: #555555; transition: opacity .18s ease, filter .18s ease, background-color .18s ease; }
@@ -192,7 +194,7 @@
       let width = 72;
       let height = 18;
       if (mode !== "listening" && mode !== "working" && near) {
-        width = menuOpen ? 300 : 232;
+        width = menuOpen ? 300 : 280;
         height = menuOpen ? 440 : 78;
       }
       document.body.dataset.mode = mode;
