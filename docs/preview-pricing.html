@@ -9,125 +9,106 @@
       --sand-600: #eeebe3;
       --vast-600: #71716e;
       --vast-950: #1a1a1a;
-      --green: #1f7a39;
-      --green-bg: #e7f6ec;
     }
     * { box-sizing: border-box; }
-    html, body { margin: 0; background: var(--sand-500); color: var(--vast-950); font-family: "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
-    body { width: 1100px; height: 320px; padding: 28px 38px; display: flex; flex-direction: column; justify-content: space-between; }
-    .banner {
-      height: 100%;
-      background: var(--vast-950);
-      color: var(--sand-50);
-      border-radius: 22px;
-      padding: 28px 34px;
-      display: grid;
-      grid-template-columns: 1.15fr 1fr 1fr;
-      gap: 22px;
-      align-items: center;
-    }
-    .badge {
-      display: inline-block;
-      background: #2c2c2a;
-      color: #e6e4dd;
-      font-size: 11.5px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      padding: 5px 11px;
-      border-radius: 999px;
-      margin-bottom: 10px;
-    }
-    h1 {
-      margin: 0 0 8px;
-      font-family: Georgia, serif;
-      font-size: 31px;
-      font-weight: 500;
-      letter-spacing: -0.025em;
-      line-height: 1.15;
-    }
-    .sub {
+    html, body {
       margin: 0;
-      color: #b7b5ae;
-      font-size: 14px;
-      line-height: 1.5;
+      background: var(--sand-500);
+      color: var(--vast-950);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
     }
-    .card {
-      background: #111111;
-      border: 1px solid #2e2e2c;
-      border-radius: 18px;
-      padding: 20px 22px;
-      height: 100%;
+    body {
+      width: 1100px;
+      height: 320px;
+      padding: 24px 36px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
-    .card.highlight {
-      background: var(--sand-50);
-      color: var(--vast-950);
-      border-color: var(--sand-600);
+    .header {
+      border-bottom: 1px solid var(--sand-600);
+      padding-bottom: 12px;
     }
-    .pill-tag {
-      display: inline-flex;
-      align-self: flex-start;
+    h1 {
+      margin: 0 0 4px;
+      font-family: Georgia, serif;
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--vast-950);
+    }
+    .sub {
+      margin: 0;
+      color: var(--vast-600);
+      font-size: 13.5px;
+      line-height: 1.4;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      height: 100%;
+      padding-top: 14px;
+      align-items: center;
+    }
+    .col {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+      padding-right: 16px;
+    }
+    .col:first-child {
+      border-right: 1px solid var(--sand-600);
+      padding-right: 32px;
+    }
+    .engine-label {
       font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: #262624;
-      color: #d6d4cd;
+      letter-spacing: 0.05em;
+      color: var(--vast-600);
     }
-    .card.highlight .pill-tag {
-      background: var(--green-bg);
-      color: var(--green);
-    }
-    .price-big {
+    .metric {
       font-family: Georgia, serif;
-      font-size: 36px;
-      font-weight: 600;
-      letter-spacing: -0.03em;
-      margin: 8px 0 4px;
+      font-size: 38px;
+      font-weight: 500;
+      letter-spacing: -0.025em;
+      color: var(--vast-950);
+      margin: 2px 0 0;
     }
-    .price-sub {
-      font-size: 15px;
+    .metric-sub {
+      font-size: 14px;
       font-weight: 600;
-      margin-bottom: 6px;
+      color: var(--vast-950);
     }
-    .card p {
+    .desc {
       margin: 0;
-      font-size: 12.8px;
+      font-size: 13px;
       line-height: 1.45;
-      color: #9e9c95;
-    }
-    .card.highlight p {
-      color: #52514e;
+      color: var(--vast-600);
     }
   </style>
 </head>
 <body>
-  <div class="banner">
-    <div>
-      <span class="badge">Transparent STT Pricing</span>
-      <h1>Transcribe Hours of Voice for Pennies—or $0 Locally</h1>
-      <p class="sub">No monthly subscriptions. Run 100% free offline with bundled Parakeet v3, or pay only fractional cents per minute with your own OpenAI API key.</p>
+  <div class="header">
+    <h1>How much can you transcribe for $0.50?</h1>
+    <p class="sub">OpenFlow connects directly to your local hardware or personal API key with no middleman fees.</p>
+  </div>
+  <div class="grid">
+    <div class="col">
+      <span class="engine-label">Local Processing &mdash; Parakeet v3</span>
+      <div class="metric">$0.00 / &infin;</div>
+      <div class="metric-sub">Unlimited offline transcription</div>
+      <p class="desc">Runs locally in the background on your PC. No API key, zero costs, and no audio data leaves your device.</p>
     </div>
-    <div class="card highlight">
-      <span class="pill-tag">$0.50 USD Budget</span>
-      <div>
-        <div class="price-big">~111 Min</div>
-        <div class="price-sub">1 hr 51 min of Spoken Audio</div>
-      </div>
-      <p>At $0.0045/min (OpenAI gpt-transcribe), just <strong>$0.50</strong> transcribes ~16,600 spoken words—weeks of daily dictation.</p>
-    </div>
-    <div class="card">
-      <span class="pill-tag">Bundled Open-Source</span>
-      <div>
-        <div class="price-big">$0.00 / ∞</div>
-        <div class="price-sub">Parakeet v3 (Local Engine)</div>
-      </div>
-      <p>Installed automatically with OpenFlow. Runs in the background on your PC with zero API costs and unlimited hours.</p>
+    <div class="col">
+      <span class="engine-label">Cloud Processing &mdash; OpenAI API</span>
+      <div class="metric">~111 Minutes</div>
+      <div class="metric-sub">1 hour 51 minutes for $0.50 USD</div>
+      <p class="desc">Billed directly by OpenAI at $0.0045/min (~16,600 spoken words). Pay only for what you speak with zero monthly fees.</p>
     </div>
   </div>
 </body>

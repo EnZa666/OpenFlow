@@ -13,25 +13,22 @@
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; background: var(--sand-500); color: var(--vast-950); font-family: "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
-    body { width: 1100px; height: 460px; padding: 22px 36px 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; }
+    body { width: 1100px; height: 460px; padding: 24px 36px 22px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; }
     h1 { margin: 0; font-family: Georgia, serif; font-size: 28px; font-weight: 500; letter-spacing: -0.025em; }
     .lead { margin: 3px 0 0; color: var(--vast-600); font-size: 14px; }
     
     .showcase-split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .showcase-box { background: var(--sand-50); border: 1px solid var(--sand-600); border-radius: 18px; padding: 14px 20px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; position: relative; min-height: 140px; }
-    .box-header { display: flex; align-items: center; justify-content: space-between; width: 100%; border-bottom: 1px solid var(--sand-600); padding-bottom: 6px; margin-bottom: 2px; }
-    .box-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--vast-950); }
-    .box-tag { font-size: 11px; font-weight: 600; color: var(--vast-600); }
+    .showcase-box { background: var(--sand-50); border: 1px solid var(--sand-600); border-radius: 18px; padding: 22px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; position: relative; min-height: 146px; }
     
-    .bubble-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; flex: 1; }
+    .bubble-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; width: 100%; }
     .tooltip-row { display: flex; gap: 10px; }
     .tip { background: #000000; color: #ffffff; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
     .pill { display: flex; align-items: center; justify-content: center; gap: 6px; height: 42px; padding: 4px 8px; background: #000000; color: #fff; border-radius: 999px; }
     .pill div { width: 34px; height: 34px; border-radius: 999px; display: grid; place-items: center; }
     .pill div.active { background: #1f1f1f; }
     
-    .edit-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; flex: 1; width: 100%; }
-    .edit-desc { font-size: 12.5px; color: var(--vast-600); text-align: center; line-height: 1.35; margin: 0; }
+    .edit-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; }
+    .edit-desc { font-size: 13px; color: var(--vast-600); text-align: center; line-height: 1.35; margin: 0; }
     .manage-pill { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 5px 12px; background: #000000; border-radius: 999px; }
     .manage-item { position: relative; display: inline-flex; align-items: center; justify-content: center; }
     .manage-item .icon-btn { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: transparent; }
@@ -53,10 +50,6 @@
   <div class="showcase-split">
     <!-- Left: Desktop Floating Bubble -->
     <div class="showcase-box">
-      <div class="box-header">
-        <span class="box-title">Floating Bubble</span>
-        <span class="box-tag">Desktop View</span>
-      </div>
       <div class="bubble-wrap">
         <div class="tooltip-row">
           <span class="tip">microphone</span>
@@ -75,10 +68,6 @@
 
     <!-- Right: Edit Bubble / Manage Elements -->
     <div class="showcase-box">
-      <div class="box-header">
-        <span class="box-title">Edit Bubble</span>
-        <span class="box-tag">Manage Elements</span>
-      </div>
       <div class="edit-wrap">
         <p class="edit-desc">Drag symbols to reorder, click − to remove, or add them back in Settings.</p>
         <div class="manage-pill">

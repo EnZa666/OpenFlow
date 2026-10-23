@@ -143,7 +143,7 @@ async function saveApiKey() {
   const saveKeyBtn = document.querySelector("#save-key");
   if (saveKeyBtn) {
     saveKeyBtn.disabled = true;
-    saveKeyBtn.textContent = "Saved ✓";
+    saveKeyBtn.textContent = "Saved";
     saveKeyBtn.classList.add("saved");
   }
   await window.openflow.dispatch("settings.save", { apiKey: value, onboardingDone: true });
@@ -526,7 +526,7 @@ document.addEventListener("DOMContentLoaded", () => {
         bubbleElements: state.draftBubbleElements || ["voice", "note", "tune", "shot"],
         floatingBubble: state.draftFloatingBubble || "active",
       });
-      bubbleSave.textContent = "Saved ✓";
+      bubbleSave.textContent = "Saved";
       bubbleSave.classList.add("saved");
       await new Promise((r) => setTimeout(r, 600));
       state.draftBubbleElements = null;
@@ -614,7 +614,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const nextTitle = (title && title.value.trim()) ? title.value.trim() : "Note";
     const nextContent = body ? body.value : state.editor.content;
     button.disabled = true;
-    button.textContent = "Saved ✓";
+    button.textContent = "Saved";
     button.classList.add("saved");
     const saved = await window.openflow.dispatch("pads.save", {
       id: state.editor.id || undefined,

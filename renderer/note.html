@@ -338,7 +338,7 @@
       button.disabled = true;
       await finishVoice();
       const nextContent = bodyInput ? bodyInput.value : "";
-      button.textContent = "Saved ✓";
+      button.textContent = "Saved";
       button.classList.add("saved");
       const saved = await window.openflow.dispatch("pads.save", {
         id: currentNote.id || undefined,
