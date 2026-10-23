@@ -473,8 +473,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const bubbleSelect = event.target.closest("[data-bubble-select]");
-    if (bubbleSelect) {
-      state.draftFloatingBubble = bubbleSelect.dataset.bubbleSelect;
+    if (bubbleSelect && window.openflow) {
+      const nextStyle = bubbleSelect.dataset.bubbleSelect;
+      state.draftFloatingBubble = nextStyle;
+      await window.openflow.dispatch("settings.save", { floatingBubble: nextStyle });
       render();
       return;
     }

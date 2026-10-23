@@ -72,6 +72,8 @@ public static class OpenFlowChord {
   [DllImport("user32.dll")]
   private static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr processId);
   [DllImport("user32.dll")]
+  private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+  [DllImport("user32.dll")]
   private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
   [DllImport("user32.dll")]
   private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);

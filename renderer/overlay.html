@@ -791,6 +791,11 @@
     if (window.openflow) {
       window.openflow.on("bar-command", (message) => {
         if (!message) return;
+        if (message.type === "config") {
+          if (message.floatingBubble) floatingBubble = message.floatingBubble;
+          if (Array.isArray(message.bubbleElements)) bubbleElements = message.bubbleElements;
+          applyBubbleConfig();
+        }
         if (message.type === "start") {
           fromSymbol = message.source === "symbol";
           voiceNext = message.source === "voicenote";
