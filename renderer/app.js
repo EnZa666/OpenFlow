@@ -15,8 +15,38 @@ const state = {
   confirmSttEngine: null,
   askKey: false,
   onboardingStep: null,
+  draftBubbleElements: null,
+  draftFloatingBubble: null,
 };
 let loadGeneration = 0;
+let draggedElemId = null;
+
+const BUBBLE_ELEMENT_DEFS = {
+  voice: {
+    id: "voice",
+    name: "Voice & Note",
+    html: `<div class="elem-voice-combo" aria-hidden="true"><div class="elem-vtrack"></div><div class="elem-vnote"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.1" stroke="currentColor" stroke-width="1.7"></circle><circle cx="8" cy="8" r="2.7" fill="currentColor"></circle></svg></div><div class="elem-mic"><svg width="15" height="15" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg></div></div>`,
+    miniIcon: `<svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg>`,
+  },
+  note: {
+    id: "note",
+    name: "Notes",
+    html: `<div class="elem-single" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.75" y="2.25" width="10.5" height="13.5" rx="1.6"></rect><path d="M6.25 6.75h5.5M6.25 10h5.5"></path></svg></div>`,
+    miniIcon: `<svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.75" y="2.25" width="10.5" height="13.5" rx="1.6"></rect><path d="M6.25 6.75h5.5M6.25 10h5.5"></path></svg>`,
+  },
+  tune: {
+    id: "tune",
+    name: "Hub",
+    html: `<div class="elem-single" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.75 7.75 9 2.5l6.25 5.25"></path><path d="M4.25 6.75v7.5a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1v-7.5"></path><path d="M7.25 15.25v-4.25h3.5v4.25"></path></svg></div>`,
+    miniIcon: `<svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.75 7.75 9 2.5l6.25 5.25"></path><path d="M4.25 6.75v7.5a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1v-7.5"></path><path d="M7.25 15.25v-4.25h3.5v4.25"></path></svg>`,
+  },
+  shot: {
+    id: "shot",
+    name: "Screenshot",
+    html: `<div class="elem-single" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 6.4V3.2H6.4M11.6 3.2h3.2v3.2M14.8 11.6v3.2h-3.2M6.4 14.8H3.2v-3.2"></path><circle cx="9" cy="9" r="1.7"></circle></svg></div>`,
+    miniIcon: `<svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 6.4V3.2H6.4M11.6 3.2h3.2v3.2M14.8 11.6v3.2h-3.2M6.4 14.8H3.2v-3.2"></path><circle cx="9" cy="9" r="1.7"></circle></svg>`,
+  },
+};
 
 function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -63,6 +93,12 @@ async function load(pending) {
   if (generation !== loadGeneration) return;
   state.desk = desk;
   const settings = desk.settings || {};
+  if (!state.draftBubbleElements) {
+    state.draftBubbleElements = Array.isArray(settings.bubbleElements) ? [...settings.bubbleElements] : ["voice", "note", "tune", "shot"];
+  }
+  if (!state.draftFloatingBubble) {
+    state.draftFloatingBubble = settings.floatingBubble || "active";
+  }
   if ((pending && pending.onboarding) || !settings.onboardingDone) {
     if (!state.onboardingStep) state.onboardingStep = "choose";
   } else {
@@ -233,7 +269,45 @@ function settingsHtml() {
     ? `<div class="prompt-banner">Please enter your OpenAI API key to use cloud speech recognition, or switch to Parakeet v3 (Local).</div>`
     : "";
   const sttCard = `<div class="settings-card">${ask}<div class="section-label">Speech-to-Text Engine</div><div class="engine-grid" role="radiogroup" aria-label="Speech-to-Text Engine"><button type="button" class="engine-option" role="radio" data-stt-select="parakeet" aria-checked="${sttEngine === "parakeet" ? "true" : "false"}"><div class="engine-head"><strong>Parakeet v3 (Open-Source)</strong></div><p>Runs locally on your PC in the background. Free and requires no API key.</p></button><button type="button" class="engine-option" role="radio" data-stt-select="openai" aria-checked="${sttEngine === "openai" ? "true" : "false"}"><div class="engine-head"><strong>OpenAI API</strong></div><p>Uses OpenAI gpt-transcribe with your personal API key.</p></button></div><label class="key">OpenAI API Key ${sttEngine === "parakeet" ? "(Optional)" : ""}<div class="key-row"><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(hint)}"><button type="button" id="save-key" class="btn-primary">Save Key</button></div></label></div>`;
-  return `${sttCard}${dictationCard}`;
+
+  // Floating Bubble Appearance
+  const bubbleStyle = state.draftFloatingBubble || settings.floatingBubble || "active";
+  const bubbleOptions = [
+    { id: "active", title: "Active", desc: "Default visible bubble on your desktop" },
+    { id: "dimmed", title: "Grayed Out", desc: "Dimmed bubble, highlights on hover" },
+    { id: "hidden", title: "Hidden", desc: "No bubble; use keyboard shortcut only" },
+  ];
+  const bubbleOptionsHtml = bubbleOptions.map((opt) => {
+    const checked = bubbleStyle === opt.id ? "true" : "false";
+    return `<button type="button" class="bubble-style-option" role="radio" data-bubble-select="${opt.id}" aria-checked="${checked}"><strong class="bubble-opt-title">${esc(opt.title)}</strong><span class="bubble-opt-desc">${esc(opt.desc)}</span></button>`;
+  }).join("");
+  const bubbleCard = `<div class="settings-card"><div class="section-label">Floating Bubble Appearance</div><div class="bubble-style-grid" role="radiogroup" aria-label="Floating Bubble Appearance">${bubbleOptionsHtml}</div></div>`;
+
+  // Manage Elements Preview and Customization
+  const currentElems = state.draftBubbleElements || ["voice", "note", "tune", "shot"];
+  const allKeys = ["voice", "note", "tune", "shot"];
+  const removedKeys = allKeys.filter((k) => !currentElems.includes(k));
+
+  const previewItemsHtml = currentElems.map((key) => {
+    const def = BUBBLE_ELEMENT_DEFS[key];
+    if (!def) return "";
+    const canRemove = currentElems.length > 1;
+    const minusBtn = canRemove
+      ? `<button type="button" class="elem-minus-btn" data-elem-remove="${key}" title="Remove ${def.name}" aria-label="Remove ${def.name}">−</button>`
+      : "";
+    return `<div class="bubble-preview-item" draggable="true" data-elem-id="${key}" title="${def.name} (drag to reorder)">${minusBtn}${def.html}</div>`;
+  }).join("");
+
+  const removedShelfHtml = removedKeys.length > 0
+    ? `<div class="removed-elements-shelf"><div class="shelf-head"><span class="shelf-label">Removed Elements</span></div><div class="removed-elements-list">${removedKeys.map((k) => {
+        const def = BUBBLE_ELEMENT_DEFS[k];
+        return `<button type="button" class="removed-elem-btn" data-elem-add="${k}" title="Add back ${def.name}">${def.miniIcon}<span>${def.name}</span><span class="elem-plus-badge">+</span></button>`;
+      }).join("")}</div></div>`
+    : `<div class="removed-elements-shelf"><span class="shelf-label">All elements are active in the floating bubble.</span></div>`;
+
+  const manageCard = `<div class="settings-card manage-elements-card"><div class="section-label">Manage Elements</div><div class="bubble-preview-wrap"><span class="bubble-preview-label">Opened Bubble Preview — Drag to reorder, click − to remove</span><div class="bubble-preview-pill" id="bubble-preview-pill">${previewItemsHtml}</div></div>${removedShelfHtml}<div class="bubble-manage-actions"><button type="button" class="btn-secondary" id="bubble-reset">Reset to Default</button><button type="button" class="btn-primary" id="bubble-save">Save Changes</button></div></div>`;
+
+  return `${sttCard}${dictationCard}${bubbleCard}${manageCard}`;
 }
 
 function paintEditor() {
@@ -296,6 +370,63 @@ function paintConfirmModal() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  const viewEl = document.querySelector("#view");
+  if (viewEl) {
+    viewEl.addEventListener("dragstart", (event) => {
+      const item = event.target.closest(".bubble-preview-item");
+      if (!item) return;
+      draggedElemId = item.dataset.elemId;
+      item.classList.add("dragging");
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", draggedElemId);
+      }
+    });
+
+    viewEl.addEventListener("dragover", (event) => {
+      const item = event.target.closest(".bubble-preview-item");
+      if (item && draggedElemId) {
+        event.preventDefault();
+        if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+        if (item.dataset.elemId !== draggedElemId) {
+          viewEl.querySelectorAll(".bubble-preview-item.drop-target").forEach((el) => {
+            if (el !== item) el.classList.remove("drop-target");
+          });
+          item.classList.add("drop-target");
+        }
+      }
+    });
+
+    viewEl.addEventListener("dragleave", (event) => {
+      const item = event.target.closest(".bubble-preview-item");
+      if (item) item.classList.remove("drop-target");
+    });
+
+    viewEl.addEventListener("dragend", () => {
+      draggedElemId = null;
+      viewEl.querySelectorAll(".bubble-preview-item").forEach((el) => el.classList.remove("dragging", "drop-target"));
+    });
+
+    viewEl.addEventListener("drop", (event) => {
+      const item = event.target.closest(".bubble-preview-item");
+      if (item && draggedElemId && item.dataset.elemId !== draggedElemId) {
+        event.preventDefault();
+        const targetId = item.dataset.elemId;
+        const list = [...(state.draftBubbleElements || ["voice", "note", "tune", "shot"])];
+        const fromIdx = list.indexOf(draggedElemId);
+        const toIdx = list.indexOf(targetId);
+        if (fromIdx !== -1 && toIdx !== -1) {
+          list.splice(fromIdx, 1);
+          list.splice(toIdx, 0, draggedElemId);
+          state.draftBubbleElements = list;
+          render();
+        }
+      }
+      draggedElemId = null;
+      viewEl.querySelectorAll(".bubble-preview-item").forEach((el) => el.classList.remove("dragging", "drop-target"));
+    });
+  }
+
   document.querySelector("#nav").addEventListener("click", (event) => {
     const button = event.target.closest("[data-nav]");
     if (!button) return;
@@ -337,6 +468,58 @@ document.addEventListener("DOMContentLoaded", () => {
       const currentMode = (state.desk && state.desk.settings && state.desk.settings.dictationMode) || "hold";
       const nextMode = currentMode === "toggle" ? "hold" : "toggle";
       await window.openflow.dispatch("settings.save", { dictationMode: nextMode });
+      await load();
+      return;
+    }
+
+    const bubbleSelect = event.target.closest("[data-bubble-select]");
+    if (bubbleSelect) {
+      state.draftFloatingBubble = bubbleSelect.dataset.bubbleSelect;
+      render();
+      return;
+    }
+
+    const elemRemove = event.target.closest("[data-elem-remove]");
+    if (elemRemove) {
+      const key = elemRemove.dataset.elemRemove;
+      const list = state.draftBubbleElements || ["voice", "note", "tune", "shot"];
+      if (list.length > 1) {
+        state.draftBubbleElements = list.filter((k) => k !== key);
+        render();
+      }
+      return;
+    }
+
+    const elemAdd = event.target.closest("[data-elem-add]");
+    if (elemAdd) {
+      const key = elemAdd.dataset.elemAdd;
+      const list = state.draftBubbleElements || ["voice", "note", "tune", "shot"];
+      if (!list.includes(key)) {
+        state.draftBubbleElements = [...list, key];
+        render();
+      }
+      return;
+    }
+
+    const bubbleReset = event.target.closest("#bubble-reset");
+    if (bubbleReset) {
+      state.draftBubbleElements = ["voice", "note", "tune", "shot"];
+      state.draftFloatingBubble = "active";
+      render();
+      return;
+    }
+
+    const bubbleSave = event.target.closest("#bubble-save");
+    if (bubbleSave && window.openflow) {
+      bubbleSave.disabled = true;
+      bubbleSave.textContent = "Saving...";
+      await window.openflow.dispatch("settings.save", {
+        bubbleElements: state.draftBubbleElements || ["voice", "note", "tune", "shot"],
+        floatingBubble: state.draftFloatingBubble || "active",
+      });
+      bubbleSave.textContent = "Saved ✓";
+      bubbleSave.classList.add("saved");
+      await new Promise((r) => setTimeout(r, 600));
       await load();
       return;
     }

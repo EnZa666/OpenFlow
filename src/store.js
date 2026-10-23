@@ -12,6 +12,8 @@ function blank() {
       onboardingDone: false,
       dictationShortcut: "ctrl+win",
       dictationMode: "hold",
+      floatingBubble: "active",
+      bubbleElements: ["voice", "note", "tune", "shot"],
       transform: "polish",
       transformAuto: false,
       polishStyle: "clarity",

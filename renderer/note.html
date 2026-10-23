@@ -119,33 +119,77 @@
     }
     #copy:hover { background: var(--sand-600); }
     #copy.copied { background: var(--green-50); color: var(--green-600); border-color: var(--green-600); }
-    #voice {
+
+    /* Deep black voice note icon button in bottom-left */
+    .note-voice-btn {
       margin-right: auto;
-      display: inline-flex;
-      align-items: center;
-      gap: 9px;
-      padding: 7px 14px 7px 11px;
-      border-radius: 999px;
-      background: #0a0a0a;
-      color: #fff;
-      font-size: 12.5px;
-      font-weight: 600;
-      letter-spacing: .01em;
-      border: 1px solid #0a0a0a;
-      transition: background-color .15s ease, opacity .15s ease;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: transparent;
+      color: #000000;
+      border: 0;
+      cursor: pointer;
+      padding: 0;
+      position: relative;
+      outline: none;
+      transition: transform .14s ease, opacity .14s ease;
     }
-    #voice:hover:not(:disabled) { background: #222; }
-    #voice:disabled { cursor: default; opacity: .75; }
-    #voice .dot { position: relative; width: 9px; height: 9px; border-radius: 50%; background: #ef4444; flex: 0 0 9px; }
-    #voice .dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: #ef4444; animation: vpulse 1.3s ease-out infinite; }
-    #voice .stop { display: none; width: 8px; height: 8px; border-radius: 2px; background: #fff; }
-    #voice:hover:not(:disabled) .dot { display: none; }
-    #voice:hover:not(:disabled) .stop { display: block; }
-    #voice.busy .dot { background: transparent; border: 1.5px solid rgba(255,255,255,.3); border-top-color: #fff; box-sizing: border-box; animation: vspin .7s linear infinite; }
-    #voice.busy .dot::after { display: none; }
-    @keyframes vpulse { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(2.6); opacity: 0; } }
-    @keyframes vspin { to { transform: rotate(360deg); } }
-    @media (prefers-reduced-motion: reduce) { #voice .dot::after { animation: none; } }
+    .note-voice-btn:hover {
+      transform: scale(1.12);
+    }
+    .note-voice-btn .icon-active,
+    .note-voice-btn .icon-idle,
+    .note-voice-btn .icon-busy {
+      display: none;
+    }
+    .note-voice-btn.active .icon-active {
+      display: block;
+    }
+    .note-voice-btn.idle .icon-idle,
+    .note-voice-btn.off .icon-idle {
+      display: block;
+    }
+    .note-voice-btn.busy .icon-busy {
+      display: block;
+    }
+    .note-voice-btn.active {
+      animation: black-symbol-pulse 1.4s ease-in-out infinite;
+    }
+    .note-voice-btn.active::after {
+      content: "";
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      border: 2px solid #000000;
+      opacity: 0;
+      animation: black-ring-pulse 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+    }
+    @keyframes black-symbol-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.12); }
+    }
+    @keyframes black-ring-pulse {
+      0% { transform: scale(0.7); opacity: 0.85; }
+      100% { transform: scale(1.55); opacity: 0; }
+    }
+    .note-spin {
+      width: 16px;
+      height: 16px;
+      box-sizing: border-box;
+      border-radius: 50%;
+      border: 2px solid rgba(0, 0, 0, 0.2);
+      border-top-color: #000000;
+      animation: notespin .7s linear infinite;
+    }
+    @keyframes notespin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .note-voice-btn.active { animation: none; }
+      .note-voice-btn.active::after { animation: none; }
+      .note-spin { animation: none; }
+    }
   </style>
 </head>
 <body>
@@ -156,7 +200,11 @@
     </header>
     <textarea id="body" placeholder="Write or dictate a note..."></textarea>
     <footer>
-      <button id="voice" type="button" hidden title="Stop recording"><span class="dot"></span><span class="stop"></span><span id="voice-label">Voice active</span></button>
+      <button id="voice" class="note-voice-btn idle" type="button" title="Click to listen again" aria-label="Voice note">
+        <svg class="icon-active" width="22" height="22" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.1" stroke="#000000" stroke-width="1.8"></circle><circle cx="8" cy="8" r="2.7" fill="#000000"></circle></svg>
+        <svg class="icon-idle" width="20" height="20" viewBox="0 0 18 18" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg>
+        <div class="icon-busy note-spin"></div>
+      </button>
       <button id="copy" type="button">Copy</button>
       <button id="save" type="button">Save</button>
     </footer>
@@ -164,50 +212,72 @@
   <script>
     let currentNote = { id: "", title: "Note", content: "" };
     const voiceButton = document.querySelector("#voice");
-    const voiceLabel = document.querySelector("#voice-label");
     const bodyField = document.querySelector("#body");
     const idlePlaceholder = bodyField.placeholder;
-    let voiceState = "off";
+    let voiceState = "idle";
     let voiceWaiters = [];
+    let voiceBaseText = "";
+    let voiceTranscript = "";
 
     function setVoiceState(next) {
       voiceState = next;
-      voiceButton.hidden = next === "off";
+      voiceButton.className = "note-voice-btn " + (next === "off" ? "idle" : next);
       voiceButton.disabled = next === "busy";
-      voiceButton.classList.toggle("busy", next === "busy");
-      voiceLabel.textContent = next === "busy" ? "Transcribing..." : "Voice active";
-      voiceButton.title = next === "active" ? "Stop recording" : "";
-      bodyField.placeholder = next === "active" ? "Listening..." : idlePlaceholder;
-      if (next === "off") {
+      if (next === "active") {
+        voiceButton.title = "Click to stop listening";
+        bodyField.placeholder = "Listening...";
+      } else if (next === "busy") {
+        voiceButton.title = "Transcribing...";
+      } else {
+        voiceButton.title = "Click to listen again";
+        bodyField.placeholder = idlePlaceholder;
+      }
+      if (next === "idle" || next === "off") {
         const waiters = voiceWaiters;
         voiceWaiters = [];
         waiters.forEach((resolve) => resolve());
       }
     }
 
-    function appendVoice(text) {
-      const clean = String(text || "").trim();
-      if (!clean) return;
-      const current = bodyField.value;
-      const gap = current && !/\s$/.test(current) ? " " : "";
-      bodyField.value = current + gap + clean;
-      bodyField.scrollTop = bodyField.scrollHeight;
-      if (document.activeElement === bodyField) {
-        bodyField.selectionStart = bodyField.selectionEnd = bodyField.value.length;
-      }
-    }
-
     function onVoice(message) {
       if (!message) return;
-      if (message.type === "start") setVoiceState("active");
-      if (message.type === "text") appendVoice(message.text);
-      if (message.type === "stopped" && voiceState === "active") setVoiceState("busy");
-      if (message.type === "done") setVoiceState("off");
+      if (message.type === "start") {
+        voiceBaseText = bodyField.value;
+        voiceTranscript = "";
+        setVoiceState("active");
+      }
+      if (message.type === "text") {
+        const clean = String(message.text || "").trim();
+        if (clean) {
+          voiceTranscript = (voiceTranscript ? voiceTranscript + " " : "") + clean;
+          const prefix = voiceBaseText ? (/\s$/.test(voiceBaseText) ? voiceBaseText : voiceBaseText + " ") : "";
+          bodyField.value = prefix + voiceTranscript;
+          bodyField.scrollTop = bodyField.scrollHeight;
+          if (document.activeElement === bodyField) {
+            bodyField.selectionStart = bodyField.selectionEnd = bodyField.value.length;
+          }
+        }
+      }
+      if (message.type === "final") {
+        const clean = String(message.text || "").trim();
+        if (clean) {
+          voiceTranscript = clean;
+          const prefix = voiceBaseText ? (/\s$/.test(voiceBaseText) ? voiceBaseText : voiceBaseText + " ") : "";
+          bodyField.value = prefix + clean;
+          bodyField.scrollTop = bodyField.scrollHeight;
+        }
+      }
+      if (message.type === "stopped" && voiceState === "active") {
+        setVoiceState("busy");
+      }
+      if (message.type === "done") {
+        setVoiceState("idle");
+      }
     }
 
     // Stop a running voice note and wait until its last words have landed in the pad.
     function finishVoice() {
-      if (voiceState === "off" || !window.openflow) return Promise.resolve();
+      if (voiceState === "idle" || voiceState === "off" || !window.openflow) return Promise.resolve();
       const done = new Promise((resolve) => {
         voiceWaiters.push(resolve);
         setTimeout(resolve, 20000);
@@ -217,7 +287,12 @@
     }
 
     voiceButton.addEventListener("click", () => {
-      if (voiceState === "active" && window.openflow) window.openflow.dispatch("voicenote.stop").catch(() => {});
+      if (!window.openflow) return;
+      if (voiceState === "active") {
+        window.openflow.dispatch("voicenote.stop").catch(() => {});
+      } else if (voiceState === "idle" || voiceState === "off") {
+        window.openflow.dispatch("voicenote.start").catch(() => {});
+      }
     });
 
     async function onShow(data) {

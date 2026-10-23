@@ -409,17 +409,7 @@ public static class OpenFlowChord {
         return false;
       }
       ChordCtrlV();
-      Thread.Sleep(180);
-      bool seen = FocusedHasText(text);
-      Log("seen=" + seen);
-      if (seen) return true;
-      if (wanted != IntPtr.Zero && GetForegroundWindow() == wanted) {
-        TypeText(text);
-        Thread.Sleep(120);
-        seen = FocusedHasText(text);
-        Log("unicode-fallback seen=" + seen);
-      }
-      return seen;
+      return true;
     } catch (Exception ex) {
       Log("error " + ex.GetType().Name + " " + ex.Message);
       return false;
@@ -491,7 +481,12 @@ public static class OpenFlowChord {
           Environment.Exit(0);
         }
       }
-      long hwnd = GetForegroundWindow().ToInt64();
+      IntPtr fg = GetForegroundWindow();
+      if (fg == IntPtr.Zero || IsShell(fg)) continue;
+      uint pid = 0;
+      GetWindowThreadProcessId(fg, out pid);
+      if (parentPid > 0 && pid == (uint)parentPid) continue;
+      long hwnd = fg.ToInt64();
       if (hwnd > 0 && hwnd != last) {
         last = hwnd;
         Emit("focus " + hwnd);

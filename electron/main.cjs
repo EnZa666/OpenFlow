@@ -173,7 +173,11 @@ function sendNoteVoice(message) {
 // Voice note: open a fresh note pad and stream the dictation into it instead of pasting.
 function startVoiceNote() {
   if (dictating) return false;
-  showNotePad("");
+  if (!noteWindow || noteWindow.isDestroyed() || !noteWindow.isVisible()) {
+    showNotePad("");
+  } else {
+    noteWindow.focus();
+  }
   sendNoteVoice({ type: "start" });
   beginDictate(0, "voicenote");
   return true;
@@ -413,6 +417,14 @@ function watchPointer() {
   if (pointerTimer) clearInterval(pointerTimer);
   pointerTimer = setInterval(() => {
     if (!overlayWindow || overlayWindow.isDestroyed() || dictating) return;
+    const settings = store ? store.getSettings() : {};
+    if (settings.floatingBubble === "hidden") {
+      if (pointerNear) {
+        pointerNear = false;
+        sendBar({ type: "far" });
+      }
+      return;
+    }
     const cursor = screen.getCursorScreenPoint();
     const area = screen.getPrimaryDisplay().workArea;
     const center = area.x + area.width / 2;
@@ -484,11 +496,19 @@ function publicSettings() {
   const validShortcuts = ["ctrl+win", "ctrl+space", "ctrl+alt", "ctrl+shift"];
   const dictationShortcut = validShortcuts.includes(settings.dictationShortcut) ? settings.dictationShortcut : "ctrl+win";
   const dictationMode = settings.dictationMode === "toggle" ? "toggle" : "hold";
+  const validFloatingBubble = ["active", "dimmed", "hidden"];
+  const floatingBubble = validFloatingBubble.includes(settings.floatingBubble) ? settings.floatingBubble : "active";
+  const defaultElements = ["voice", "note", "tune", "shot"];
+  const bubbleElements = Array.isArray(settings.bubbleElements)
+    ? settings.bubbleElements.filter((id) => defaultElements.includes(id))
+    : defaultElements;
   return {
     ...settings,
     sttEngine,
     dictationShortcut,
     dictationMode,
+    floatingBubble,
+    bubbleElements: bubbleElements.length ? bubbleElements : defaultElements,
     onboardingDone: Boolean(settings.onboardingDone),
     hasKey: Boolean(readKey()),
     parakeet: parakeet.getStatus(app.getPath("userData")),
@@ -502,12 +522,36 @@ function publicSettings() {
   };
 }
 
+function applyFloatingBubbleState() {
+  if (!store || !overlayWindow || overlayWindow.isDestroyed()) return;
+  const settings = store.getSettings();
+  const mode = settings.floatingBubble || "active";
+  const elements = Array.isArray(settings.bubbleElements) && settings.bubbleElements.length
+    ? settings.bubbleElements
+    : ["voice", "note", "tune", "shot"];
+  if (mode === "hidden") {
+    overlayWindow.setIgnoreMouseEvents(true);
+    overlayWindow.setOpacity(0);
+  } else {
+    overlayWindow.setIgnoreMouseEvents(false);
+    overlayWindow.setOpacity(1);
+    const isHidden = (store && store.getSettings().floatingBubble) === "hidden";
+  if (!isHidden && !overlayWindow.isVisible()) overlayWindow.showInactive();
+  }
+  sendBar({
+    type: "config",
+    floatingBubble: mode,
+    bubbleElements: elements,
+  });
+}
+
 function sendOverlay(state) {
   if (!overlayWindow || overlayWindow.isDestroyed()) return;
   clearTimeout(overlayTimer);
   const mode = !state || !state.mode || state.mode === "hidden" ? "idle" : state.mode;
   const next = { ...state, mode, sounds: true };
-  if (!overlayWindow.isVisible()) overlayWindow.showInactive();
+  const isHidden = (store && store.getSettings().floatingBubble) === "hidden";
+  if (!isHidden && !overlayWindow.isVisible()) overlayWindow.showInactive();
   const deliver = () => {
     if (!overlayWindow.isDestroyed()) overlayWindow.webContents.send("overlay-state", next);
   };
@@ -882,7 +926,7 @@ function createWindows() {
   overlayWindow.loadFile(path.join(root, "renderer", "overlay.html"));
   overlayWindow.once("ready-to-show", () => {
     placeBar(72, 18);
-    overlayWindow.showInactive();
+    applyFloatingBubbleState();
   });
 }
 
@@ -893,7 +937,8 @@ function delay(ms) {
 function restoreBar() {
   if (!overlayWindow || overlayWindow.isDestroyed()) return;
   overlayWindow.setOpacity(1);
-  if (!overlayWindow.isVisible()) overlayWindow.showInactive();
+  const isHidden = (store && store.getSettings().floatingBubble) === "hidden";
+  if (!isHidden && !overlayWindow.isVisible()) overlayWindow.showInactive();
 }
 
 function writeIniPairs(file, pairs) {
@@ -1046,12 +1091,22 @@ const actions = {
     if (payload && (payload.dictationMode === "hold" || payload.dictationMode === "toggle")) {
       patch.dictationMode = payload.dictationMode;
     }
+    const validFloatingBubble = ["active", "dimmed", "hidden"];
+    if (payload && validFloatingBubble.includes(payload.floatingBubble)) {
+      patch.floatingBubble = payload.floatingBubble;
+    }
+    const defaultElements = ["voice", "note", "tune", "shot"];
+    if (payload && Array.isArray(payload.bubbleElements)) {
+      const filtered = payload.bubbleElements.filter((id) => defaultElements.includes(id));
+      if (filtered.length) patch.bubbleElements = filtered;
+    }
     if (payload && Object.prototype.hasOwnProperty.call(payload, "onboardingDone")) {
       patch.onboardingDone = Boolean(payload.onboardingDone);
     }
     store.updateSettings(patch);
     if (patch.dictationShortcut) syncChordShortcut(patch.dictationShortcut);
     syncSttEngine();
+    applyFloatingBubbleState();
     return { settings: publicSettings(), hotkeyRegistered: true };
   },
   "transform.set": (payload) => {
@@ -1192,6 +1247,8 @@ const actions = {
     const raw = String(payload.text || "").trim();
     if (!raw) throw new Error("No text.");
     const prepared = flow.prepareTranscript(raw, library());
+
+    if (typeof session !== "undefined" && session.voice && prepared.text) sendNoteVoice({ type: "final", text: prepared.text });
     return commitTranscript(raw, prepared, {
       appName: payload.appName,
       url: payload.url,
@@ -1248,6 +1305,8 @@ const actions = {
     const raw = audio.joinTranscripts(session.texts);
     if (!raw) return { empty: true, text: "" };
     const prepared = flow.prepareTranscript(raw, library());
+
+    if (typeof session !== "undefined" && session.voice && prepared.text) sendNoteVoice({ type: "final", text: prepared.text });
     return commitTranscript(raw, prepared, {
       appName: session.voice ? "Voice note" : payload.appName,
       url: payload.url,
@@ -1379,6 +1438,7 @@ if (!gotLock) {
     store = createStore(path.join(app.getPath("userData"), "openflow.json"));
     await runModelInstallerIfNeeded();
     syncSttEngine();
+    applyFloatingBubbleState();
     createWindows();
     createTray();
     await ensureMicrophone();

@@ -14,6 +14,8 @@ test("background settings default to a resident desk", () => {
   assert.equal(settings.sounds, true);
   assert.equal(settings.openAtLogin, false);
   assert.equal(settings.showHotkey, "CommandOrControl+Alt+O");
+  assert.equal(settings.floatingBubble, "active");
+  assert.deepEqual(settings.bubbleElements, ["voice", "note", "tune", "shot"]);
 });
 
 test("dictionary, history, and notes round-trip in memory", () => {

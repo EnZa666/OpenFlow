@@ -1013,6 +1013,288 @@ label.key input:focus, .onboard-input:focus {
   gap: 10px;
 }
 
+/* Floating Bubble Appearance */
+.bubble-style-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bubble-style-option {
+  text-align: left;
+  padding: 13px 15px;
+  border-radius: 13px;
+  background: var(--bg);
+  border: 1.5px solid var(--line);
+  display: grid;
+  gap: 4px;
+  cursor: pointer;
+  transition: border-color .14s ease, background-color .14s ease, box-shadow .14s ease;
+}
+
+.bubble-style-option:hover {
+  border-color: var(--sand-700);
+}
+
+.bubble-style-option[aria-checked="true"] {
+  background: var(--surface);
+  border-color: var(--fg);
+  box-shadow: var(--shadow-xs);
+}
+
+.bubble-opt-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.bubble-opt-desc {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+/* Manage Elements Preview & Controls */
+.manage-elements-card {
+  display: grid;
+  gap: 16px;
+}
+
+.bubble-preview-wrap {
+  padding: 22px 20px;
+  border-radius: 14px;
+  background: var(--sand-500);
+  border: 1px dashed var(--sand-600);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+  min-height: 105px;
+}
+
+.bubble-preview-label {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--vast-600);
+  letter-spacing: .02em;
+}
+
+.bubble-preview-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: #000000;
+  color: #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  min-height: 38px;
+}
+
+.bubble-preview-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  user-select: none;
+  border-radius: 999px;
+  padding: 2px;
+  transition: transform .14s ease, opacity .14s ease;
+}
+
+.bubble-preview-item:active {
+  cursor: grabbing;
+}
+
+.bubble-preview-item.dragging {
+  opacity: 0.4;
+  transform: scale(0.95);
+}
+
+.bubble-preview-item.drop-target {
+  outline: 2px dashed #ffffff;
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
+.elem-single {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  border-radius: 50%;
+  transition: background-color .14s ease;
+}
+
+.elem-single:hover {
+  background: #1f1f1f;
+}
+
+/* Voice combo: ausgeklappter voice note slider at 1/2 distance */
+.elem-voice-combo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 30px;
+}
+
+.elem-vtrack {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50px;
+  height: 30px;
+  border-radius: 999px;
+  background: #050505;
+  border: 1px solid #1c1c1c;
+}
+
+.elem-vnote {
+  position: absolute;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #000000;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  z-index: 1;
+}
+
+.elem-mic {
+  position: absolute;
+  right: 2px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #1f1f1f;
+  box-shadow: 0 0 0 1px #2a2a2a;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  z-index: 1;
+}
+
+/* Minus badge on top right of each item */
+.elem-minus-btn {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #ffffff;
+  border: 1.5px solid #000000;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 3;
+  padding: 0;
+  transition: transform .12s ease, background-color .12s ease;
+}
+
+.elem-minus-btn:hover {
+  background: #dc2626;
+  transform: scale(1.15);
+}
+
+.elem-minus-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  display: none;
+}
+
+/* Shelf of removed elements */
+.removed-elements-shelf {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shelf-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.shelf-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.removed-elements-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.removed-elem-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px 6px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color .14s ease, background-color .14s ease, transform .12s ease;
+}
+
+.removed-elem-btn:hover {
+  border-color: var(--sand-700);
+  background: var(--sand-500);
+  transform: translateY(-0.5px);
+}
+
+.elem-plus-badge {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #10b981;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Actions at the bottom of the tab */
+.bubble-manage-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.bubble-manage-actions .btn-primary.saved {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #059669;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto; transition: none !important; }
 }
