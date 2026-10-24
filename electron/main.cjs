@@ -256,30 +256,45 @@ function placeBar(width, height) {
   overlayWindow.setBounds(next);
 }
 
+function getNoteBounds() {
+  try {
+    const display = screen.getPrimaryDisplay();
+    const area = display ? display.workArea : { x: 0, y: 0, width: 1920, height: 1080 };
+    return {
+      x: Math.round(area.x + (area.width - 480) / 2),
+      y: Math.round(area.y + area.height - 540 - 88),
+      width: 480,
+      height: 540,
+    };
+  } catch (_e) {
+    return { x: 100, y: 100, width: 480, height: 540 };
+  }
+}
+
 function sendNotePad() {
   if (!noteWindow || noteWindow.isDestroyed()) return;
+  let padData = { id: "", title: "Note", content: "" };
+  if (notePadId && store) {
+    const found = store.listPads().find((p) => p.id === notePadId);
+    if (found) padData = { id: found.id, title: found.title || "Note", content: found.content || "" };
+  }
   const deliver = () => {
     if (!noteWindow || noteWindow.isDestroyed()) return;
-    noteWindow.webContents.send("note-show", { id: notePadId || "" });
+    noteWindow.webContents.send("note-show", padData);
   };
   if (noteWindow.webContents.isLoading()) noteWindow.webContents.once("did-finish-load", deliver);
   else deliver();
 }
 
-function showNotePad(id) {
-  notePadId = id || "";
-  if (noteWindow && !noteWindow.isDestroyed()) {
-    if (noteWindow.isMinimized()) noteWindow.restore();
-    noteWindow.show();
-    noteWindow.setAlwaysOnTop(true, "pop-up-menu");
-    noteWindow.moveTop();
-    noteWindow.focus();
-    sendNotePad();
-    return;
-  }
+function ensureNoteWindow() {
+  if (noteWindow && !noteWindow.isDestroyed()) return noteWindow;
+  const bounds = getNoteBounds();
   noteWindow = new BrowserWindow({
-    width: 480,
-    height: 540,
+    x: bounds.x,
+    y: bounds.y,
+    width: bounds.width,
+    height: bounds.height,
+    show: false,
     frame: false,
     transparent: true,
     backgroundColor: "#00000000",
@@ -296,25 +311,33 @@ function showNotePad(id) {
       sandbox: true,
     },
   });
+  noteWindow.webContents.setBackgroundThrottling(false);
   noteWindow.on("closed", () => {
     noteWindow = null;
   });
-  noteWindow.once("ready-to-show", () => {
-    if (!noteWindow || noteWindow.isDestroyed()) return;
-    noteWindow.show();
-    noteWindow.setAlwaysOnTop(true, "pop-up-menu");
-    noteWindow.moveTop();
-    noteWindow.focus();
-  });
-  noteWindow.webContents.on("did-finish-load", sendNotePad);
   noteWindow.loadFile(path.join(root, "renderer", "note.html"));
-  const area = screen.getPrimaryDisplay().workArea;
-  noteWindow.setBounds({
-    x: Math.round(area.x + (area.width - 480) / 2),
-    y: Math.round(area.y + area.height - 540 - 88),
-    width: 480,
-    height: 540,
-  });
+  return noteWindow;
+}
+
+function showNotePad(id) {
+  notePadId = id || "";
+  const win = ensureNoteWindow();
+  const bounds = getNoteBounds();
+  win.setBounds(bounds);
+  sendNotePad();
+  const reveal = () => {
+    if (!win || win.isDestroyed()) return;
+    if (win.isMinimized()) win.restore();
+    win.show();
+    win.setAlwaysOnTop(true, "pop-up-menu");
+    win.moveTop();
+    win.focus();
+  };
+  if (win.webContents.isLoading()) {
+    win.webContents.once("did-finish-load", reveal);
+  } else {
+    reveal();
+  }
 }
 
 function openFreshNote() {
@@ -944,6 +967,7 @@ function createWindows() {
     placeBar(72, 18);
     applyFloatingBubbleState();
   });
+  ensureNoteWindow();
 }
 
 function delay(ms) {
@@ -1182,7 +1206,10 @@ const actions = {
   },
   "note.close": () => {
     if (dictating && dictateSource === "voicenote" && voiceNoteTarget === "note") endDictate();
-    if (noteWindow && !noteWindow.isDestroyed()) noteWindow.hide();
+    if (noteWindow && !noteWindow.isDestroyed()) {
+      noteWindow.webContents.send("note-reset", {});
+      noteWindow.hide();
+    }
     return true;
   },
   "desk.pending": () => {

@@ -863,38 +863,62 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   let editorTitleBefore = "";
-  let editorTitleConfirmed = false;
 
   document.querySelector("#editor").addEventListener("focusin", (event) => {
     if (event.target && event.target.id === "editor-title") {
       editorTitleBefore = event.target.value;
-      editorTitleConfirmed = false;
     }
   });
 
-  document.querySelector("#editor").addEventListener("keydown", (event) => {
+  document.querySelector("#editor").addEventListener("keydown", async (event) => {
     if (event.target && event.target.id === "editor-title") {
       if (event.key === "Enter") {
         event.preventDefault();
-        editorTitleConfirmed = true;
-        const val = event.target.value.trim() || editorTitleBefore;
+        const val = event.target.value.trim() || editorTitleBefore || "Note";
         event.target.value = val;
         editorTitleBefore = val;
-        if (state.editor) state.editor.title = val;
+        if (state.editor) {
+          state.editor.title = val;
+          if (state.editor.id && window.openflow) {
+            const body = document.querySelector("#editor-body");
+            const nextContent = body ? body.value : (state.editor.content || "");
+            await window.openflow.dispatch("pads.save", {
+              id: state.editor.id,
+              title: val,
+              content: nextContent,
+            });
+            const found = (state.desk.pads || []).find((p) => p.id === state.editor.id);
+            if (found) found.title = val;
+          }
+        }
         event.target.blur();
       } else if (event.key === "Escape") {
         event.preventDefault();
-        editorTitleConfirmed = false;
         event.target.value = editorTitleBefore;
+        if (state.editor) state.editor.title = editorTitleBefore;
         event.target.blur();
       }
     }
   });
 
-  document.querySelector("#editor").addEventListener("focusout", (event) => {
+  document.querySelector("#editor").addEventListener("focusout", async (event) => {
     if (event.target && event.target.id === "editor-title") {
-      if (!editorTitleConfirmed) {
-        event.target.value = editorTitleBefore;
+      const val = event.target.value.trim() || editorTitleBefore || "Note";
+      event.target.value = val;
+      editorTitleBefore = val;
+      if (state.editor) {
+        state.editor.title = val;
+        if (state.editor.id && window.openflow) {
+          const body = document.querySelector("#editor-body");
+          const nextContent = body ? body.value : (state.editor.content || "");
+          await window.openflow.dispatch("pads.save", {
+            id: state.editor.id,
+            title: val,
+            content: nextContent,
+          });
+          const found = (state.desk.pads || []).find((p) => p.id === state.editor.id);
+          if (found) found.title = val;
+        }
       }
     }
   });

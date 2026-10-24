@@ -316,52 +316,79 @@
     });
 
     async function onShow(data) {
-      const wantedId = data && data.id ? String(data.id) : "";
-      if (wantedId && window.openflow) {
-        const pads = await window.openflow.dispatch("pads.list");
-        const found = (pads || []).find((p) => p.id === wantedId);
-        if (found) {
-          currentNote = { id: found.id, title: found.title || "Note", content: found.content || "" };
+      if (data && typeof data === "object" && ("title" in data || "content" in data)) {
+        currentNote = {
+          id: data.id || "",
+          title: data.title || "Note",
+          content: data.content || "",
+        };
+      } else {
+        const wantedId = data && data.id ? String(data.id) : "";
+        if (wantedId && window.openflow) {
+          const pads = await window.openflow.dispatch("pads.list");
+          const found = (pads || []).find((p) => p.id === wantedId);
+          currentNote = found
+            ? { id: found.id, title: found.title || "Note", content: found.content || "" }
+            : { id: "", title: "Note", content: "" };
         } else {
           currentNote = { id: "", title: "Note", content: "" };
         }
-      } else {
-        currentNote = { id: "", title: "Note", content: "" };
       }
-      document.querySelector("#title").value = currentNote.title;
-      document.querySelector("#body").value = currentNote.content;
-      document.querySelector("#body").focus();
+      titleInput.value = currentNote.title;
+      bodyField.value = currentNote.content;
+      noteTitleBefore = currentNote.title;
+      bodyField.focus();
+    }
+
+    function onReset() {
+      currentNote = { id: "", title: "Note", content: "" };
+      titleInput.value = "Note";
+      bodyField.value = "";
+      noteTitleBefore = "Note";
+      setVoiceState("idle");
     }
 
     const titleInput = document.querySelector("#title");
     let noteTitleBefore = "";
-    let noteTitleConfirmed = false;
 
     titleInput.addEventListener("focus", () => {
       noteTitleBefore = titleInput.value;
-      noteTitleConfirmed = false;
     });
 
-    titleInput.addEventListener("keydown", (event) => {
+    titleInput.addEventListener("keydown", async (event) => {
       if (event.key === "Enter") {
         event.preventDefault();
-        noteTitleConfirmed = true;
-        const val = titleInput.value.trim() || noteTitleBefore;
+        const val = titleInput.value.trim() || noteTitleBefore || "Note";
         titleInput.value = val;
         noteTitleBefore = val;
         currentNote.title = val;
+        if (currentNote.id && window.openflow) {
+          await window.openflow.dispatch("pads.save", {
+            id: currentNote.id,
+            title: val,
+            content: bodyField ? bodyField.value : currentNote.content,
+          });
+        }
         titleInput.blur();
       } else if (event.key === "Escape") {
         event.preventDefault();
-        noteTitleConfirmed = false;
         titleInput.value = noteTitleBefore;
+        currentNote.title = noteTitleBefore;
         titleInput.blur();
       }
     });
 
-    titleInput.addEventListener("blur", () => {
-      if (!noteTitleConfirmed) {
-        titleInput.value = noteTitleBefore;
+    titleInput.addEventListener("blur", async () => {
+      const val = titleInput.value.trim() || noteTitleBefore || "Note";
+      titleInput.value = val;
+      currentNote.title = val;
+      noteTitleBefore = val;
+      if (currentNote.id && window.openflow) {
+        await window.openflow.dispatch("pads.save", {
+          id: currentNote.id,
+          title: val,
+          content: bodyField ? bodyField.value : currentNote.content,
+        });
       }
     });
 
@@ -383,13 +410,11 @@
 
     document.querySelector("#save").addEventListener("click", async () => {
       if (!window.openflow) return;
-      const titleInput = document.querySelector("#title");
-      const bodyInput = document.querySelector("#body");
-      const nextTitle = titleInput && titleInput.value.trim() ? titleInput.value.trim() : "Note";
+      const nextTitle = titleInput && titleInput.value.trim() ? titleInput.value.trim() : (currentNote.title || "Note");
       const button = document.querySelector("#save");
       button.disabled = true;
       await finishVoice();
-      const nextContent = bodyInput ? bodyInput.value : "";
+      const nextContent = bodyField ? bodyField.value : "";
       button.textContent = "Saved";
       button.classList.add("saved");
       const saved = await window.openflow.dispatch("pads.save", {
@@ -398,6 +423,7 @@
         content: nextContent,
       });
       currentNote.id = saved.id;
+      currentNote.title = nextTitle;
       await new Promise((resolve) => setTimeout(resolve, 500));
       button.disabled = false;
       button.textContent = "Save";
@@ -407,6 +433,7 @@
 
     if (window.openflow) {
       window.openflow.on("note-show", onShow);
+      window.openflow.on("note-reset", onReset);
       window.openflow.on("note-voice", onVoice);
       onShow({});
     }

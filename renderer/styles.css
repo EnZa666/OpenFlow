@@ -739,13 +739,11 @@ h1 {
 }
 
 .engine-option:has(.engine-info-btn:hover) .engine-normal-view,
-.engine-option:has(.engine-info-view:hover) .engine-normal-view,
 .engine-option.is-pinned .engine-normal-view {
   display: none;
 }
 
 .engine-option:has(.engine-info-btn:hover) .engine-info-view,
-.engine-option:has(.engine-info-view:hover) .engine-info-view,
 .engine-option.is-pinned .engine-info-view {
   display: flex;
 }
@@ -794,6 +792,14 @@ h1 {
   cursor: pointer;
   transition: opacity .14s ease, transform .14s ease;
   flex-shrink: 0;
+  position: relative;
+}
+
+.engine-info-btn::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
 }
 
 .engine-info-btn:hover {
