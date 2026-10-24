@@ -1,6 +1,6 @@
 {
   "name": "openflow",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "author": "LuiInventions",
   "license": "GPL-3.0-only",
   "description": "Local-first voice dictation, notes, and screenshot dock for Windows. Includes local open-source Parakeet v3 STT and optional OpenAI API support.",
@@ -49,24 +49,11 @@
     ],
     "win": {
       "target": [
-        "nsis",
         "nsis-web"
       ],
       "icon": "build/icon.png",
       "signExecutable": false,
       "requestedExecutionLevel": "asInvoker"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "runAfterFinish": true,
-      "deleteAppDataOnUninstall": false,
-      "include": "build/installer.nsh",
-      "shortcutName": "OpenFlow",
-      "artifactName": "OpenFlow-Setup-${version}.exe"
     },
     "nsisWeb": {
       "oneClick": false,
@@ -78,8 +65,7 @@
       "deleteAppDataOnUninstall": false,
       "include": "build/installer.nsh",
       "shortcutName": "OpenFlow",
-      "artifactName": "OpenFlow-Setup-${version}.exe",
-      "appPackageUrl": "https://github.com/LuiInventions/OpenFlow/releases/download/v1.3.2/openflow-1.3.2-x64.nsis.7z"
+      "artifactName": "OpenFlow-Setup-${version}.exe"
     }
   },
   "devDependencies": {
