@@ -240,7 +240,7 @@ function dictateHtml() {
     : `Active engine: ${esc(engine)}. Speak naturally while holding and release to paste or save as a note.`;
   const hero = `<div class="hero-card"><div class="hero-copy"><strong>${headline}</strong><p>${subline}</p></div><p class="shortcut">${shortcutKeysHtml(shortcut)}</p></div>`;
   const latest = text
-    ? `<div class="section-label">Latest Dictation</div><div class="transcript-card"><div class="transcript-head"><span>${esc(when(last.created_at))}</span><button type="button" class="btn-secondary" data-copy-text="${esc(text)}">Copy</button></div><p class="lead">${esc(text)}</p></div>`
+    ? `<div class="section-label">Latest Dictation</div><div class="transcript-card"><p class="lead">${esc(text)}</p><time>${esc(when(last.created_at))}</time></div>`
     : `<p class="empty">No dictations yet. Use ${shortcutKeysHtml(shortcut)} or click the microphone in the bottom bar to start.</p>`;
   const recent = history.slice(1, 5);
   const recentHtml = recent.length
@@ -385,8 +385,7 @@ function paintEditor() {
   editor.dataset.id = editorKey;
   editor.hidden = false;
   const titleVal = state.editor.title || "Note";
-  const titleCh = Math.max(5, Math.min(32, titleVal.length + 1));
-  editor.innerHTML = `<header class="note-bubble-head"><input id="editor-title" value="${esc(titleVal)}" placeholder="Note title" aria-label="Title" style="width: ${titleCh}ch;"><button type="button" id="editor-back">Back</button></header><textarea id="editor-body" placeholder="Write or dictate a note..." aria-label="Note">${esc(state.editor.content || "")}</textarea><footer class="note-bubble-foot"><button type="button" id="editor-voice" class="note-voice-btn idle" title="Click to dictate" aria-label="Dictate into note" aria-pressed="false"><svg class="icon-active" width="22" height="22" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.1" stroke="#000000" stroke-width="1.8"></circle><circle cx="8" cy="8" r="2.7" fill="#000000"></circle></svg><svg class="icon-idle" width="20" height="20" viewBox="0 0 18 18" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg><span class="icon-busy note-spin"></span></button><button type="button" id="editor-copy">Copy</button><button type="button" id="editor-save">Save</button></footer>`;
+  editor.innerHTML = `<header class="note-bubble-head"><input id="editor-title" value="${esc(titleVal)}" placeholder="Note title" aria-label="Title"><button type="button" id="editor-back">Back</button></header><textarea id="editor-body" placeholder="Write or dictate a note..." aria-label="Note">${esc(state.editor.content || "")}</textarea><footer class="note-bubble-foot"><button type="button" id="editor-voice" class="note-voice-btn idle" title="Click to dictate" aria-label="Dictate into note" aria-pressed="false"><svg class="icon-active" width="22" height="22" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.1" stroke="#000000" stroke-width="1.8"></circle><circle cx="8" cy="8" r="2.7" fill="#000000"></circle></svg><svg class="icon-idle" width="20" height="20" viewBox="0 0 18 18" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg><span class="icon-busy note-spin"></span></button><button type="button" id="editor-copy">Copy</button><button type="button" id="editor-save">Save</button></footer>`;
   paintEditorVoice();
   const body = editor.querySelector("#editor-body");
   if (body) body.focus();
@@ -833,7 +832,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (copyBtn && window.openflow) {
       const body = document.querySelector("#editor-body");
       await window.openflow.dispatch("clipboard.copy", { text: body ? body.value : "" });
-      copyBtn.textContent = "Copied ✓";
+      copyBtn.textContent = "Copied";
       copyBtn.classList.add("copied");
       setTimeout(() => {
         copyBtn.textContent = "Copy";
@@ -863,10 +862,40 @@ document.addEventListener("DOMContentLoaded", () => {
     await load();
   });
 
-  document.querySelector("#editor").addEventListener("input", (event) => {
+  let editorTitleBefore = "";
+  let editorTitleConfirmed = false;
+
+  document.querySelector("#editor").addEventListener("focusin", (event) => {
     if (event.target && event.target.id === "editor-title") {
-      const len = event.target.value.length || 4;
-      event.target.style.width = Math.max(5, Math.min(32, len + 1)) + "ch";
+      editorTitleBefore = event.target.value;
+      editorTitleConfirmed = false;
+    }
+  });
+
+  document.querySelector("#editor").addEventListener("keydown", (event) => {
+    if (event.target && event.target.id === "editor-title") {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        editorTitleConfirmed = true;
+        const val = event.target.value.trim() || editorTitleBefore;
+        event.target.value = val;
+        editorTitleBefore = val;
+        if (state.editor) state.editor.title = val;
+        event.target.blur();
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        editorTitleConfirmed = false;
+        event.target.value = editorTitleBefore;
+        event.target.blur();
+      }
+    }
+  });
+
+  document.querySelector("#editor").addEventListener("focusout", (event) => {
+    if (event.target && event.target.id === "editor-title") {
+      if (!editorTitleConfirmed) {
+        event.target.value = editorTitleBefore;
+      }
     }
   });
 

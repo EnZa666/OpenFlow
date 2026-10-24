@@ -133,7 +133,7 @@
       border: 1px solid var(--sand-600);
     }
     #copy:hover { background: var(--sand-600); }
-    #copy.copied { background: var(--green-50); color: var(--green-600); border-color: var(--green-600); }
+    #copy.copied { background: var(--sand-600); color: var(--vast-950); border-color: var(--vast-600); }
 
     /* Deep black voice note icon button in bottom-left */
     .note-voice-btn {
@@ -210,7 +210,7 @@
 <body>
   <div class="card">
     <header>
-      <input id="title" value="Note" placeholder="Note title" aria-label="Title" style="width: 5ch;">
+      <input id="title" value="Note" placeholder="Note title" aria-label="Title">
       <button id="close" type="button" aria-label="Close" title="Close">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <line x1="3" y1="3" x2="13" y2="13"></line>
@@ -329,16 +329,41 @@
         currentNote = { id: "", title: "Note", content: "" };
       }
       document.querySelector("#title").value = currentNote.title;
-      syncTitleWidth();
       document.querySelector("#body").value = currentNote.content;
       document.querySelector("#body").focus();
     }
 
     const titleInput = document.querySelector("#title");
-    function syncTitleWidth() {
-      titleInput.style.width = Math.max(5, Math.min(32, (titleInput.value.length || 4) + 1)) + "ch";
-    }
-    titleInput.addEventListener("input", syncTitleWidth);
+    let noteTitleBefore = "";
+    let noteTitleConfirmed = false;
+
+    titleInput.addEventListener("focus", () => {
+      noteTitleBefore = titleInput.value;
+      noteTitleConfirmed = false;
+    });
+
+    titleInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        noteTitleConfirmed = true;
+        const val = titleInput.value.trim() || noteTitleBefore;
+        titleInput.value = val;
+        noteTitleBefore = val;
+        currentNote.title = val;
+        titleInput.blur();
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        noteTitleConfirmed = false;
+        titleInput.value = noteTitleBefore;
+        titleInput.blur();
+      }
+    });
+
+    titleInput.addEventListener("blur", () => {
+      if (!noteTitleConfirmed) {
+        titleInput.value = noteTitleBefore;
+      }
+    });
 
     document.querySelector("#close").addEventListener("click", () => {
       if (window.openflow) window.openflow.dispatch("note.close");
@@ -348,7 +373,7 @@
       if (!window.openflow) return;
       const btn = document.querySelector("#copy");
       await window.openflow.dispatch("clipboard.copy", { text: document.querySelector("#body").value });
-      btn.textContent = "Copied ✓";
+      btn.textContent = "Copied";
       btn.classList.add("copied");
       setTimeout(() => {
         btn.textContent = "Copy";
