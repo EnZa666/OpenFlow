@@ -18,6 +18,8 @@ const state = {
   draftBubbleElements: null,
   draftFloatingBubble: null,
   draftVoiceNote: null,
+  sttInfoParakeet: false,
+  sttInfoOpenai: false,
 };
 let loadGeneration = 0;
 let draggedElemId = null;
@@ -229,7 +231,7 @@ function dictateHtml() {
   const last = history[0];
   const text = last ? (last.edited_text || last.formatted_text || last.asr_text) : "";
   const settings = state.desk.settings || {};
-  const engine = settings.sttEngine === "openai" ? "OpenAI API (gpt-transcribe)" : "Parakeet v3 (Local)";
+  const engine = settings.sttEngine === "openai" ? "gpt-transcribe" : "Parakeet v3 (Local)";
   const shortcut = settings.dictationShortcut || "ctrl+win";
   const isToggle = settings.dictationMode === "toggle";
   const headline = isToggle ? "Press shortcut to start and stop dictation" : "Hold shortcut to dictate anywhere";
@@ -301,7 +303,32 @@ function settingsHtml() {
   const ask = (sttEngine === "openai" && (state.askKey || !settings.hasKey))
     ? `<div class="prompt-banner">Please enter your OpenAI API key to use cloud speech recognition, or switch to Parakeet v3 (Local).</div>`
     : "";
-  const sttCard = `<div class="settings-card">${ask}<div class="section-label">Speech-to-Text Engine</div><div class="engine-grid" role="radiogroup" aria-label="Speech-to-Text Engine"><button type="button" class="engine-option" role="radio" data-stt-select="parakeet" aria-checked="${sttEngine === "parakeet" ? "true" : "false"}"><div class="engine-head"><strong>Parakeet v3 (Open-Source)</strong></div><p>Runs locally on your PC in the background. Free and requires no API key.</p></button><button type="button" class="engine-option" role="radio" data-stt-select="openai" aria-checked="${sttEngine === "openai" ? "true" : "false"}"><div class="engine-head"><strong>OpenAI API</strong></div><p>Uses OpenAI gpt-transcribe with your personal API key.</p></button></div><label class="key">OpenAI API Key ${sttEngine === "parakeet" ? "(Optional)" : ""}<div class="key-row"><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(hint)}"><button type="button" id="save-key" class="btn-primary">Save Key</button></div></label></div>`;
+function sttInfoIcon(active) {
+  if (active) {
+    return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+  }
+  return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+}
+
+function parakeetCardHtml(sttEngine) {
+  const isChecked = sttEngine === "parakeet";
+  const isInfo = Boolean(state.sttInfoParakeet);
+  if (isInfo) {
+    return `<div role="radio" tabindex="0" class="engine-option" data-stt-select="parakeet" aria-checked="${isChecked ? "true" : "false"}"><div class="engine-info-head"><strong class="engine-info-title">Parakeet v3</strong><button type="button" class="engine-info-btn active" data-stt-info="parakeet" title="Details schließen" aria-label="Details schließen">${sttInfoIcon(true)}</button></div><div class="engine-info-tagline">Deployed on your CPU &mdash; 0.6B Modell</div><div class="engine-metrics"><div class="engine-metric-row"><div class="engine-metric-labels"><span>Genauigkeit</span><strong>94 %</strong></div><div class="engine-bar-track"><div class="engine-bar-fill" style="width: 94%;"></div></div><div class="engine-metric-note">93,7% Word Accuracy (6,3% WER)</div></div><div class="engine-metric-row"><div class="engine-metric-labels"><span>Geschwindigkeit (CPU)</span><strong>22× Echtzeit</strong></div><div class="engine-bar-track"><div class="engine-bar-fill" style="width: 60%;"></div></div><div class="engine-metric-note">~200 ms lokale Inferenz ohne Upload</div></div></div></div>`;
+  }
+  return `<div role="radio" tabindex="0" class="engine-option" data-stt-select="parakeet" aria-checked="${isChecked ? "true" : "false"}"><div class="engine-head"><strong>Parakeet v3 (Open-Source)</strong><button type="button" class="engine-info-btn" data-stt-info="parakeet" title="Modell-Details anzeigen" aria-label="Modell-Details anzeigen">${sttInfoIcon(false)}</button></div><p>Runs locally on your PC in the background. Free and requires no API key.</p></div>`;
+}
+
+function openaiCardHtml(sttEngine) {
+  const isChecked = sttEngine === "openai";
+  const isInfo = Boolean(state.sttInfoOpenai);
+  if (isInfo) {
+    return `<div role="radio" tabindex="0" class="engine-option" data-stt-select="openai" aria-checked="${isChecked ? "true" : "false"}"><div class="engine-info-head"><div class="engine-info-head-left"><strong class="engine-info-title">gpt-transcribe</strong><span class="engine-badge info-badge">LLM-based</span></div><button type="button" class="engine-info-btn active" data-stt-info="openai" title="Details schließen" aria-label="Details schließen">${sttInfoIcon(true)}</button></div><div class="engine-info-tagline">Automatische Fehlerverbesserung durch AI</div><div class="engine-metrics"><div class="engine-metric-row"><div class="engine-metric-labels"><span>Genauigkeit</span><strong>93 %</strong></div><div class="engine-bar-track"><div class="engine-bar-fill" style="width: 93%;"></div></div><div class="engine-metric-note">92,8% Word Accuracy (stark bei Fachjargon & Deutsch)</div></div><div class="engine-metric-row"><div class="engine-metric-labels"><span>Geschwindigkeit (API)</span><strong>34× Echtzeit</strong></div><div class="engine-bar-track"><div class="engine-bar-fill" style="width: 80%;"></div></div><div class="engine-metric-note">34× Server-Inferenz (zzgl. Web-Latenz)</div></div></div></div>`;
+  }
+  return `<div role="radio" tabindex="0" class="engine-option" data-stt-select="openai" aria-checked="${isChecked ? "true" : "false"}"><div class="engine-head"><strong>gpt-transcribe</strong><button type="button" class="engine-info-btn" data-stt-info="openai" title="Modell-Details anzeigen" aria-label="Modell-Details anzeigen">${sttInfoIcon(false)}</button></div><p>Uses OpenAI gpt-transcribe with your personal API key.</p></div>`;
+}
+
+  const sttCard = `<div class="settings-card">${ask}<div class="section-label">Speech-to-Text Engine</div><div class="engine-grid" role="radiogroup" aria-label="Speech-to-Text Engine">${parakeetCardHtml(sttEngine)}${openaiCardHtml(sttEngine)}</div><label class="key">OpenAI API Key ${sttEngine === "parakeet" ? "(Optional)" : ""}<div class="key-row"><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(hint)}"><button type="button" id="save-key" class="btn-primary">Save Key</button></div></label></div>`;
 
   // Floating Bubble Appearance
   const bubbleStyle = state.draftFloatingBubble || settings.floatingBubble || "active";
@@ -472,7 +499,7 @@ function paintConfirmModal() {
   if (!host) return;
   if (state.confirmSttEngine) {
     const label = state.confirmSttEngine === "openai"
-      ? "OpenAI API (gpt-transcribe)"
+      ? "gpt-transcribe"
       : "Parakeet v3 (Open-Source, Local)";
     host.hidden = false;
     host.innerHTML = `<div class="onboarding-card" role="dialog" aria-modal="true"><div><h2>Switch Speech-to-Text Model?</h2><p class="sub">Use <strong>${esc(label)}</strong> for all dictation sessions?</p></div><div class="onboarding-actions"><button type="button" class="btn-secondary" data-confirm-cancel>Cancel</button><button type="button" class="btn-primary" data-confirm-stt-ok>OK</button></div></div>`;
@@ -605,12 +632,36 @@ document.addEventListener("DOMContentLoaded", () => {
     else render();
   });
 
+  document.querySelector("#view").addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      const option = event.target.closest(".engine-option");
+      if (option && !event.target.closest(".engine-info-btn")) {
+        event.preventDefault();
+        option.click();
+      }
+    }
+  });
+
   document.querySelector("#view").addEventListener("click", async (event) => {
     const copyBtn = event.target.closest("[data-copy-text]");
     if (copyBtn && window.openflow) {
       await window.openflow.dispatch("clipboard.copy", { text: copyBtn.dataset.copyText });
       copyBtn.textContent = "Copied ✓";
       setTimeout(() => { copyBtn.textContent = "Copy"; }, 1000);
+      return;
+    }
+
+    const sttInfo = event.target.closest("[data-stt-info]");
+    if (sttInfo) {
+      event.stopPropagation();
+      event.preventDefault();
+      const engine = sttInfo.dataset.sttInfo;
+      if (engine === "parakeet") {
+        state.sttInfoParakeet = !state.sttInfoParakeet;
+      } else if (engine === "openai") {
+        state.sttInfoOpenai = !state.sttInfoOpenai;
+      }
+      render();
       return;
     }
 
