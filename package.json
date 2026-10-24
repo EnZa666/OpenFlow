@@ -49,6 +49,7 @@
     ],
     "win": {
       "target": [
+        "nsis",
         "nsis-web"
       ],
       "icon": "build/icon.png",

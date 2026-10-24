@@ -5,5 +5,6 @@
   Pop $R0
   nsExec::Exec `"$PowerShellPath" -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object { ($$_.Name -ieq 'OpenFlow.exe') -or ($$_.Name -ieq 'flameshot.exe') -or ($$_.CommandLine -match 'chord\.ps1|unmute\.ps1|paste\.ps1|micrepair') } | ForEach-Object { Stop-Process -Id $$_.ProcessId -Force -ErrorAction SilentlyContinue }"`
   Pop $R0
+  RMDir /r "$LOCALAPPDATA\openflow-updater"
   Sleep 800
 !macroend
