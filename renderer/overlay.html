@@ -158,6 +158,7 @@
     const voiceGroup = document.querySelector("#voice-group");
     let floatingBubble = "active";
     let bubbleElements = ["voice", "note", "tune", "shot"];
+    let voiceNoteButton = true;
     let voiceNext = false;
     let voiceSession = false;
     let voiceCloseTimer = 0;
@@ -295,9 +296,9 @@
 
       const voiceActive = activeIds.includes("voice");
       mic.hidden = !open || !voiceActive;
-      vnote.hidden = !open || !voiceActive;
-      vtrack.hidden = !open || !voiceActive;
-      if (!open || !voiceActive) setVoiceOpen(false);
+      vnote.hidden = !open || !voiceActive || !voiceNoteButton;
+      vtrack.hidden = !open || !voiceActive || !voiceNoteButton;
+      if (!open || !voiceActive || !voiceNoteButton) setVoiceOpen(false);
 
       status.hidden = !busy;
       document.querySelector(".eq").hidden = mode !== "listening";
@@ -816,6 +817,7 @@
         if (message.type === "config") {
           if (message.floatingBubble) floatingBubble = message.floatingBubble;
           if (Array.isArray(message.bubbleElements)) bubbleElements = message.bubbleElements;
+          if (typeof message.voiceNoteButton === "boolean") voiceNoteButton = message.voiceNoteButton;
           applyBubbleConfig();
         }
         if (message.type === "start") {
@@ -848,7 +850,7 @@
       pill.classList.toggle("voice-open", Boolean(value));
     }
     function openVoice() {
-      if (mode !== "idle" || !near) return;
+      if (mode !== "idle" || !near || !voiceNoteButton) return;
       setVoiceOpen(true);
     }
     function closeVoiceSoon() {

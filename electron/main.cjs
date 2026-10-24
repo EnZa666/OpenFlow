@@ -26,6 +26,7 @@ let quitting = false;
 let overlayTimer = null;
 let dictating = false;
 let dictateSource = "";
+let voiceNoteTarget = "note";
 let pointerTimer = null;
 let pointerNear = false;
 let barMenuOpen = false;
@@ -169,21 +170,30 @@ function endDictate() {
 }
 
 function sendNoteVoice(message) {
-  if (!noteWindow || noteWindow.isDestroyed()) return;
+  // Voice notes stream either into the floating note pad or into the note editor of the main app.
+  const target = voiceNoteTarget === "desk" ? mainWindow : noteWindow;
+  if (!target || target.isDestroyed()) return;
   const deliver = () => {
-    if (noteWindow && !noteWindow.isDestroyed()) noteWindow.webContents.send("note-voice", message);
+    if (target && !target.isDestroyed()) target.webContents.send("note-voice", message);
   };
-  if (noteWindow.webContents.isLoading()) noteWindow.webContents.once("did-finish-load", deliver);
+  if (target.webContents.isLoading()) target.webContents.once("did-finish-load", deliver);
   else deliver();
 }
 
 // Voice note: open a fresh note pad and stream the dictation into it instead of pasting.
-function startVoiceNote() {
+// With target "desk" the dictation streams into the note editor of the main app window instead.
+function startVoiceNote(target) {
   if (dictating) return false;
-  if (!noteWindow || noteWindow.isDestroyed() || !noteWindow.isVisible()) {
-    showNotePad("");
+  if (target === "desk") {
+    if (!mainWindow || mainWindow.isDestroyed()) return false;
+    voiceNoteTarget = "desk";
   } else {
-    noteWindow.focus();
+    voiceNoteTarget = "note";
+    if (!noteWindow || noteWindow.isDestroyed() || !noteWindow.isVisible()) {
+      showNotePad("");
+    } else {
+      noteWindow.focus();
+    }
   }
   sendNoteVoice({ type: "start" });
   beginDictate(0, "voicenote");
@@ -516,6 +526,7 @@ function publicSettings() {
     dictationMode,
     floatingBubble,
     bubbleElements: bubbleElements.length ? bubbleElements : defaultElements,
+    voiceNoteButton: settings.voiceNoteButton !== false,
     onboardingDone: Boolean(settings.onboardingDone),
     hasKey: Boolean(readKey()),
     parakeet: parakeet.getStatus(app.getPath("userData")),
@@ -547,6 +558,7 @@ function applyFloatingBubbleState() {
     type: "config",
     floatingBubble: mode,
     bubbleElements: elements,
+    voiceNoteButton: settings.voiceNoteButton !== false,
   });
 }
 
@@ -1106,6 +1118,9 @@ const actions = {
       const filtered = payload.bubbleElements.filter((id) => defaultElements.includes(id));
       if (filtered.length) patch.bubbleElements = filtered;
     }
+    if (payload && typeof payload.voiceNoteButton === "boolean") {
+      patch.voiceNoteButton = payload.voiceNoteButton;
+    }
     if (payload && Object.prototype.hasOwnProperty.call(payload, "onboardingDone")) {
       patch.onboardingDone = Boolean(payload.onboardingDone);
     }
@@ -1152,7 +1167,7 @@ const actions = {
     return true;
   },
   "shot.open": () => openFlameshot(),
-  "voicenote.start": () => startVoiceNote(),
+  "voicenote.start": (payload) => startVoiceNote(payload && payload.target === "desk" ? "desk" : "note"),
   "voicenote.stop": () => {
     if (dictating && dictateSource === "voicenote") endDictate();
     return true;
@@ -1166,7 +1181,7 @@ const actions = {
     return true;
   },
   "note.close": () => {
-    if (dictating && dictateSource === "voicenote") endDictate();
+    if (dictating && dictateSource === "voicenote" && voiceNoteTarget === "note") endDictate();
     if (noteWindow && !noteWindow.isDestroyed()) noteWindow.hide();
     return true;
   },

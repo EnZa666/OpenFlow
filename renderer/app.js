@@ -17,9 +17,32 @@ const state = {
   onboardingStep: null,
   draftBubbleElements: null,
   draftFloatingBubble: null,
+  draftVoiceNote: null,
 };
 let loadGeneration = 0;
 let draggedElemId = null;
+let draggedShelfId = null;
+
+const EDITOR_PLACEHOLDER = "Write or dictate a note...";
+// Live voice dictation into the note editor (streamed from the main process as "note-voice").
+const editorVoice = { state: "idle", waiters: [], base: "", transcript: "", key: "" };
+
+// "Take voice note" is not a standalone element: it always sits attached to the left of the mic.
+const VOICE_NOTE_DEF = {
+  id: "vnote",
+  name: "Take Voice Note",
+  miniIcon: `<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.1" stroke="currentColor" stroke-width="1.7"></circle><circle cx="8" cy="8" r="2.7" fill="currentColor"></circle></svg>`,
+};
+
+function voiceComboHtml(withVoiceNote, removable) {
+  if (!withVoiceNote) {
+    return `<div class="elem-voice-combo no-vnote" aria-hidden="true"><div class="elem-mic"><svg width="15" height="15" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg></div></div>`;
+  }
+  const minus = removable
+    ? `<button type="button" class="elem-minus-btn elem-minus-vnote" data-vnote-remove title="Remove ${VOICE_NOTE_DEF.name}" aria-label="Remove ${VOICE_NOTE_DEF.name}">−</button>`
+    : "";
+  return `<div class="elem-voice-combo"><div class="elem-vtrack" aria-hidden="true"></div><div class="elem-vnote" title="${VOICE_NOTE_DEF.name}"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.1" stroke="currentColor" stroke-width="1.7"></circle><circle cx="8" cy="8" r="2.7" fill="currentColor"></circle></svg>${minus}</div><div class="elem-mic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg></div></div>`;
+}
 
 const BUBBLE_ELEMENT_DEFS = {
   voice: {
@@ -98,6 +121,9 @@ async function load(pending) {
   }
   if (!state.draftFloatingBubble) {
     state.draftFloatingBubble = settings.floatingBubble || "active";
+  }
+  if (state.draftVoiceNote === null) {
+    state.draftVoiceNote = settings.voiceNoteButton !== false;
   }
   if ((pending && pending.onboarding) || !settings.onboardingDone) {
     if (!state.onboardingStep) state.onboardingStep = "choose";
@@ -295,6 +321,7 @@ function settingsHtml() {
   const allKeys = ["voice", "note", "tune", "shot"];
   const removedKeys = allKeys.filter((k) => !currentElems.includes(k));
 
+  const voiceNoteOn = state.draftVoiceNote !== false;
   const previewItemsHtml = currentElems.map((key) => {
     const def = BUBBLE_ELEMENT_DEFS[key];
     if (!def) return "";
@@ -302,14 +329,19 @@ function settingsHtml() {
     const minusBtn = canRemove
       ? `<button type="button" class="elem-minus-btn" data-elem-remove="${key}" title="Remove ${def.name}" aria-label="Remove ${def.name}">−</button>`
       : "";
-    return `<div class="bubble-preview-item" draggable="true" data-elem-id="${key}" title="${def.name} (drag to reorder)">${minusBtn}${def.html}</div>`;
+    const html = key === "voice" ? voiceComboHtml(voiceNoteOn, true) : def.html;
+    return `<div class="bubble-preview-item" draggable="true" data-elem-id="${key}" title="${def.name} (drag to reorder)">${minusBtn}${html}</div>`;
   }).join("");
 
-  const removedShelfHtml = removedKeys.length > 0
-    ? `<div class="removed-elements-shelf"><div class="shelf-head"><span class="shelf-label">Removed Elements</span></div><div class="removed-elements-list">${removedKeys.map((k) => {
-        const def = BUBBLE_ELEMENT_DEFS[k];
-        return `<button type="button" class="removed-elem-btn" data-elem-add="${k}" title="Add back ${def.name}">${def.miniIcon}<span>${def.name}</span><span class="elem-plus-badge">+</span></button>`;
-      }).join("")}</div></div>`
+  const shelfItems = removedKeys.map((k) => {
+    const def = BUBBLE_ELEMENT_DEFS[k];
+    return `<button type="button" class="removed-elem-btn" draggable="true" data-shelf-elem="${k}" data-elem-add="${k}" title="Add back ${def.name} (click or drag onto the bubble)">${def.miniIcon}<span>${def.name}</span><span class="elem-plus-badge">+</span></button>`;
+  });
+  if (!voiceNoteOn && currentElems.includes("voice")) {
+    shelfItems.push(`<button type="button" class="removed-elem-btn" draggable="true" data-shelf-elem="vnote" data-vnote-add title="Add back ${VOICE_NOTE_DEF.name} (click or drop anywhere on the bubble — it snaps back to the mic)">${VOICE_NOTE_DEF.miniIcon}<span>${VOICE_NOTE_DEF.name}</span><span class="elem-plus-badge">+</span></button>`);
+  }
+  const removedShelfHtml = shelfItems.length > 0
+    ? `<div class="removed-elements-shelf"><div class="shelf-head"><span class="shelf-label">Removed Elements</span></div><div class="removed-elements-list">${shelfItems.join("")}</div></div>`
     : "";
 
   const manageCard = `<div class="settings-card manage-elements-card"><div class="section-label">Manage Elements</div><div class="bubble-preview-wrap"><div class="bubble-preview-pill" id="bubble-preview-pill">${previewItemsHtml}</div></div>${removedShelfHtml}<div class="bubble-manage-actions"><button type="button" class="btn-secondary" id="bubble-reset">Reset to Default</button><button type="button" class="btn-primary" id="bubble-save">Save Changes</button></div></div>`;
@@ -331,9 +363,90 @@ function paintEditor() {
   }
   editor.dataset.id = editorKey;
   editor.hidden = false;
-  editor.innerHTML = `<header class="note-bubble-head"><input id="editor-title" value="${esc(state.editor.title || "Note")}" placeholder="Note title" aria-label="Title"><button type="button" id="editor-back">Back</button></header><textarea id="editor-body" placeholder="Write or dictate a note..." aria-label="Note">${esc(state.editor.content || "")}</textarea><footer class="note-bubble-foot"><button type="button" id="editor-copy">Copy</button><button type="button" id="editor-save">Save</button></footer>`;
+  editor.innerHTML = `<header class="note-bubble-head"><input id="editor-title" value="${esc(state.editor.title || "Note")}" placeholder="Note title" aria-label="Title"><button type="button" id="editor-back">Back</button></header><textarea id="editor-body" placeholder="Write or dictate a note..." aria-label="Note">${esc(state.editor.content || "")}</textarea><footer class="note-bubble-foot"><button type="button" id="editor-voice" class="note-voice-btn idle" title="Click to dictate" aria-label="Dictate into note" aria-pressed="false"><svg class="icon-active" width="22" height="22" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.1" stroke="#000000" stroke-width="1.8"></circle><circle cx="8" cy="8" r="2.7" fill="#000000"></circle></svg><svg class="icon-idle" width="20" height="20" viewBox="0 0 18 18" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg><span class="icon-busy note-spin"></span></button><button type="button" id="editor-copy">Copy</button><button type="button" id="editor-save">Save</button></footer>`;
+  paintEditorVoice();
   const body = editor.querySelector("#editor-body");
   if (body) body.focus();
+}
+
+function currentEditorKey() {
+  return state.editor ? (state.editor.id || "__draft__") : "";
+}
+
+function paintEditorVoice() {
+  const next = editorVoice.state;
+  const button = document.querySelector("#editor-voice");
+  if (button) {
+    button.className = `note-voice-btn ${next}`;
+    button.disabled = next === "busy";
+    button.title = next === "active" ? "Click to stop listening" : (next === "busy" ? "Transcribing..." : "Click to dictate");
+    button.setAttribute("aria-pressed", next === "active" ? "true" : "false");
+  }
+  const body = document.querySelector("#editor-body");
+  if (body) body.placeholder = next === "active" ? "Listening..." : EDITOR_PLACEHOLDER;
+}
+
+function setEditorVoiceState(next) {
+  editorVoice.state = next;
+  paintEditorVoice();
+  if (next === "idle") {
+    const waiters = editorVoice.waiters;
+    editorVoice.waiters = [];
+    waiters.forEach((resolve) => resolve());
+  }
+}
+
+function writeEditorVoiceText(text) {
+  const body = document.querySelector("#editor-body");
+  if (!body || editorVoice.key !== currentEditorKey()) return;
+  const base = editorVoice.base;
+  const prefix = base ? (/\s$/.test(base) ? base : `${base} `) : "";
+  body.value = prefix + text;
+  body.scrollTop = body.scrollHeight;
+  if (document.activeElement === body) body.selectionStart = body.selectionEnd = body.value.length;
+  if (state.editor) state.editor.content = body.value;
+}
+
+function onEditorVoice(message) {
+  if (!message) return;
+  if (message.type === "start") {
+    const body = document.querySelector("#editor-body");
+    editorVoice.key = currentEditorKey();
+    editorVoice.base = body ? body.value : (state.editor ? state.editor.content || "" : "");
+    editorVoice.transcript = "";
+    setEditorVoiceState("active");
+  }
+  if (message.type === "text") {
+    const clean = String(message.text || "").trim();
+    if (clean) {
+      editorVoice.transcript = (editorVoice.transcript ? `${editorVoice.transcript} ` : "") + clean;
+      writeEditorVoiceText(editorVoice.transcript);
+    }
+  }
+  if (message.type === "final") {
+    const clean = String(message.text || "").trim();
+    if (clean) {
+      editorVoice.transcript = clean;
+      writeEditorVoiceText(clean);
+    }
+  }
+  if (message.type === "stopped" && editorVoice.state === "active") setEditorVoiceState("busy");
+  if (message.type === "done") setEditorVoiceState("idle");
+}
+
+function stopEditorVoice() {
+  if (editorVoice.state === "active" && window.openflow) window.openflow.dispatch("voicenote.stop").catch(() => {});
+}
+
+// Stop a running dictation and wait until its last words have landed in the editor.
+function finishEditorVoice() {
+  if (editorVoice.state === "idle" || !window.openflow) return Promise.resolve();
+  const done = new Promise((resolve) => {
+    editorVoice.waiters.push(resolve);
+    setTimeout(resolve, 20000);
+  });
+  stopEditorVoice();
+  return done;
 }
 
 function paintOnboarding() {
@@ -380,6 +493,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const viewEl = document.querySelector("#view");
   if (viewEl) {
     viewEl.addEventListener("dragstart", (event) => {
+      const shelfItem = event.target.closest("[data-shelf-elem]");
+      if (shelfItem) {
+        draggedShelfId = shelfItem.dataset.shelfElem;
+        shelfItem.classList.add("dragging");
+        if (event.dataTransfer) {
+          event.dataTransfer.effectAllowed = "copy";
+          event.dataTransfer.setData("text/plain", draggedShelfId);
+        }
+        return;
+      }
       const item = event.target.closest(".bubble-preview-item");
       if (!item) return;
       draggedElemId = item.dataset.elemId;
@@ -391,6 +514,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     viewEl.addEventListener("dragover", (event) => {
+      if (draggedShelfId) {
+        const pill = event.target.closest("#bubble-preview-pill");
+        viewEl.querySelectorAll(".bubble-preview-pill.drop-active").forEach((el) => {
+          if (el !== pill) el.classList.remove("drop-active");
+        });
+        if (pill) {
+          event.preventDefault();
+          if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+          pill.classList.add("drop-active");
+        }
+        return;
+      }
       const item = event.target.closest(".bubble-preview-item");
       if (item && draggedElemId) {
         event.preventDefault();
@@ -411,10 +546,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
     viewEl.addEventListener("dragend", () => {
       draggedElemId = null;
-      viewEl.querySelectorAll(".bubble-preview-item").forEach((el) => el.classList.remove("dragging", "drop-target"));
+      draggedShelfId = null;
+      viewEl.querySelectorAll(".bubble-preview-item, [data-shelf-elem]").forEach((el) => el.classList.remove("dragging", "drop-target"));
+      viewEl.querySelectorAll(".bubble-preview-pill.drop-active").forEach((el) => el.classList.remove("drop-active"));
     });
 
     viewEl.addEventListener("drop", (event) => {
+      if (draggedShelfId) {
+        const shelfId = draggedShelfId;
+        draggedShelfId = null;
+        const pill = event.target.closest("#bubble-preview-pill");
+        if (pill) {
+          event.preventDefault();
+          if (shelfId === "vnote") {
+            // Wherever it lands on the bubble, the voice note button snaps back onto the mic.
+            state.draftVoiceNote = true;
+          } else {
+            const list = [...(state.draftBubbleElements || ["voice", "note", "tune", "shot"])];
+            if (!list.includes(shelfId)) {
+              const target = event.target.closest(".bubble-preview-item");
+              const toIdx = target ? list.indexOf(target.dataset.elemId) : -1;
+              if (toIdx === -1) list.push(shelfId);
+              else list.splice(toIdx, 0, shelfId);
+              state.draftBubbleElements = list;
+            }
+          }
+          render();
+        }
+        return;
+      }
       const item = event.target.closest(".bubble-preview-item");
       if (item && draggedElemId && item.dataset.elemId !== draggedElemId) {
         event.preventDefault();
@@ -437,6 +597,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelector("#nav").addEventListener("click", (event) => {
     const button = event.target.closest("[data-nav]");
     if (!button) return;
+    stopEditorVoice();
     state.view = button.dataset.nav;
     state.editor = null;
     state.confirmDeleteId = null;
@@ -488,6 +649,18 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (event.target.closest("[data-vnote-remove]")) {
+      state.draftVoiceNote = false;
+      render();
+      return;
+    }
+
+    if (event.target.closest("[data-vnote-add]")) {
+      state.draftVoiceNote = true;
+      render();
+      return;
+    }
+
     const elemRemove = event.target.closest("[data-elem-remove]");
     if (elemRemove) {
       const key = elemRemove.dataset.elemRemove;
@@ -514,6 +687,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (bubbleReset) {
       state.draftBubbleElements = ["voice", "note", "tune", "shot"];
       state.draftFloatingBubble = "active";
+      state.draftVoiceNote = true;
       render();
       return;
     }
@@ -525,12 +699,14 @@ document.addEventListener("DOMContentLoaded", () => {
       await window.openflow.dispatch("settings.save", {
         bubbleElements: state.draftBubbleElements || ["voice", "note", "tune", "shot"],
         floatingBubble: state.draftFloatingBubble || "active",
+        voiceNoteButton: state.draftVoiceNote !== false,
       });
       bubbleSave.textContent = "Saved";
       bubbleSave.classList.add("saved");
       await new Promise((r) => setTimeout(r, 600));
       state.draftBubbleElements = null;
       state.draftFloatingBubble = null;
+      state.draftVoiceNote = null;
       await load();
       return;
     }
@@ -591,8 +767,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.querySelector("#editor").addEventListener("click", async (event) => {
     if (event.target.closest("#editor-back")) {
+      stopEditorVoice();
       state.editor = null;
       render();
+      return;
+    }
+    if (event.target.closest("#editor-voice") && window.openflow) {
+      if (editorVoice.state === "active") {
+        stopEditorVoice();
+      } else if (editorVoice.state === "idle") {
+        window.openflow.dispatch("voicenote.start", { target: "desk" }).catch(() => {});
+      }
+      const body = document.querySelector("#editor-body");
+      if (body) body.focus();
       return;
     }
     const copyBtn = event.target.closest("#editor-copy");
@@ -609,11 +796,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const button = event.target.closest("#editor-save");
     if (!button || !state.editor) return;
+    button.disabled = true;
+    await finishEditorVoice();
+    if (!state.editor) return;
     const title = document.querySelector("#editor-title");
     const body = document.querySelector("#editor-body");
     const nextTitle = (title && title.value.trim()) ? title.value.trim() : "Note";
     const nextContent = body ? body.value : state.editor.content;
-    button.disabled = true;
     button.textContent = "Saved";
     button.classList.add("saved");
     const saved = await window.openflow.dispatch("pads.save", {
@@ -680,6 +869,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   if (!window.openflow) return;
+  window.openflow.on("note-voice", onEditorVoice);
   window.openflow.on("desk-refresh", (payload) => {
     load(payload).catch(() => {});
   });

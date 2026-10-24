@@ -343,8 +343,8 @@ h1 {
   position: fixed;
   right: 28px;
   bottom: 28px;
-  width: 52px;
-  height: 52px;
+  width: 35px;
+  height: 35px;
   border-radius: 50%;
   background: var(--vast-950);
   color: #ffffff;
@@ -370,8 +370,8 @@ h1 {
 }
 
 .notes-fab svg {
-  width: 22px;
-  height: 22px;
+  width: 15px;
+  height: 15px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2;
@@ -887,6 +887,81 @@ label.key input:focus, .onboard-input:focus {
   background: var(--sand-50);
 }
 
+/* Black dictation mic in the bottom-left of the note editor (same as the floating note pad) */
+.note-bubble-foot .note-voice-btn {
+  margin-right: auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: #000000;
+  border: 0;
+  padding: 0;
+  position: relative;
+  outline: none;
+  transition: transform .14s ease, opacity .14s ease;
+}
+
+.note-bubble-foot .note-voice-btn:hover:not(:disabled) {
+  transform: scale(1.12);
+}
+
+.note-voice-btn .icon-active,
+.note-voice-btn .icon-idle,
+.note-voice-btn .icon-busy {
+  display: none;
+}
+
+.note-voice-btn.active .icon-active,
+.note-voice-btn.idle .icon-idle,
+.note-voice-btn.busy .icon-busy {
+  display: block;
+}
+
+.note-bubble-foot .note-voice-btn.active {
+  animation: editor-mic-pulse 1.4s ease-in-out infinite;
+}
+
+.note-bubble-foot .note-voice-btn.active::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid #000000;
+  opacity: 0;
+  animation: editor-mic-ring 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+.note-voice-btn .note-spin {
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-top-color: #000000;
+  animation: editor-mic-spin .7s linear infinite;
+}
+
+@keyframes editor-mic-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+@keyframes editor-mic-ring {
+  0% { transform: scale(0.7); opacity: 0.85; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+
+@keyframes editor-mic-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .note-bubble-foot .note-voice-btn.active,
+  .note-bubble-foot .note-voice-btn.active::after,
+  .note-voice-btn .note-spin { animation: none; }
+}
+
 #editor-copy {
   color: var(--fg);
   background: var(--sand-500);
@@ -1174,6 +1249,11 @@ button.saved {
   z-index: 1;
 }
 
+/* Voice combo without the "take voice note" button: just the mic */
+.elem-voice-combo.no-vnote {
+  width: 30px;
+}
+
 .elem-mic {
   position: absolute;
   right: 2px;
@@ -1213,6 +1293,23 @@ button.saved {
 .elem-minus-btn:hover {
   background: #dc2626;
   transform: scale(1.15);
+}
+
+/* Minus badge of the voice note button sits on its top-left, away from the combo's own badge */
+.elem-minus-btn.elem-minus-vnote {
+  top: -9px;
+  left: -9px;
+  right: auto;
+}
+
+/* Bubble preview highlights while a removed element is dragged onto it */
+.bubble-preview-pill.drop-active {
+  outline: 2px dashed var(--sand-700, #a8a29e);
+  outline-offset: 4px;
+}
+
+.removed-elem-btn.dragging {
+  opacity: 0.45;
 }
 
 .elem-minus-btn:disabled {
