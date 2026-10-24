@@ -707,18 +707,19 @@ h1 {
 
 .engine-option {
   text-align: left;
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-radius: 14px;
   background: var(--bg);
   border: 1.5px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  justify-content: space-between;
+  height: 98px;
+  box-sizing: border-box;
   transition: border-color .14s ease, background-color .14s ease, box-shadow .14s ease;
   cursor: pointer;
   user-select: none;
-  min-height: 124px;
-  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .engine-option:hover {
@@ -739,105 +740,104 @@ h1 {
 }
 
 .engine-head strong {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--fg);
+}
+
+.engine-option p {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.35;
 }
 
 .engine-info-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 19px;
+  height: 19px;
   border-radius: 50%;
-  color: var(--vast-500);
-  background: var(--soft);
-  border: 1px solid var(--line);
+  color: #ffffff;
+  background: #1a1a1a;
+  border: none;
   padding: 0;
   cursor: pointer;
-  transition: all .14s ease;
+  transition: opacity .14s ease, transform .14s ease;
   flex-shrink: 0;
 }
 
 .engine-info-btn:hover {
-  color: var(--fg);
-  background: var(--sand-600);
-  border-color: var(--vast-500);
+  opacity: 0.85;
 }
 
 .engine-info-btn.active {
-  color: var(--fg);
-  background: var(--sand-600);
-  border-color: var(--vast-600);
+  color: #ffffff;
+  background: #1a1a1a;
 }
 
 .engine-info-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
 }
 
-.engine-info-head-left {
+.engine-info-meta {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .engine-info-title {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--fg);
+  line-height: 1.2;
 }
 
 .engine-info-tagline {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--vast-800);
-  line-height: 1.35;
-}
-
-.engine-badge.info-badge {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 1px 6px;
-  background: var(--soft);
-  color: var(--vast-800);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--muted);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .engine-metrics {
   display: grid;
-  gap: 8px;
-  margin-top: 2px;
+  gap: 5px;
 }
 
 .engine-metric-row {
   display: grid;
-  gap: 3px;
+  gap: 2px;
 }
 
 .engine-metric-labels {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--muted);
+  line-height: 1.1;
 }
 
 .engine-metric-labels strong {
-  font-size: 11.5px;
+  font-size: 10.5px;
   font-weight: 600;
   color: var(--fg);
 }
 
 .engine-bar-track {
   width: 100%;
-  height: 5px;
+  height: 3.5px;
   background: var(--sand-600);
   border-radius: 999px;
   overflow: hidden;
@@ -845,15 +845,8 @@ h1 {
 
 .engine-bar-fill {
   height: 100%;
-  background: var(--vast-950);
+  background: var(--fg);
   border-radius: 999px;
-  transition: width .2s ease;
-}
-
-.engine-metric-note {
-  font-size: 9.5px;
-  color: var(--vast-500);
-  line-height: 1.25;
 }
 
 .engine-badge {
