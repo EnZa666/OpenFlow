@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const commands = require("./commands");
 
 function blank() {
   return {
@@ -50,6 +51,7 @@ function blank() {
     notifications: [],
     scratchpad: "",
     pads: [],
+    commands: [],
   };
 }
 
@@ -428,6 +430,50 @@ function createStore(filePath) {
     deletePad(padId) {
       data.pads = data.pads.filter((row) => row.id !== padId);
       save();
+    },
+    listCommands(query) {
+      return data.commands
+        .filter((row) => queryMatch(`${row.name}${row.extension} ${row.content}`, query))
+        .sort((a, b) => b.modified_at.localeCompare(a.modified_at))
+        .map((row) => ({ ...row }));
+    },
+    getCommand(commandId) {
+      const row = data.commands.find((item) => item.id === commandId);
+      return row ? { ...row } : null;
+    },
+    createCommand(input) {
+      const type = commands.typeOf(input.type);
+      if (!type) throw new Error("Unknown command type.");
+      const name = String(input.name == null ? "" : input.name);
+      const error = commands.validateName(name, data.commands);
+      if (error) throw new Error(error);
+      const content = String(input.content || "");
+      if (content.length > commands.MAX_CONTENT) throw new Error("The script is too large.");
+      const stamp = now();
+      const row = { id: id(), name, type: type.id, extension: type.extension, content, created_at: stamp, modified_at: stamp };
+      data.commands.push(row);
+      save();
+      return { ...row };
+    },
+    // Only the script text can change; name, type and extension stay fixed.
+    saveCommand(input) {
+      const row = data.commands.find((item) => item.id === input.id);
+      if (!row) throw new Error("Command missing.");
+      const content = String(input.content || "");
+      if (content.length > commands.MAX_CONTENT) throw new Error("The script is too large.");
+      row.content = content;
+      row.modified_at = now();
+      save();
+      return { ...row };
+    },
+    deleteCommand(commandId) {
+      const row = data.commands.find((item) => item.id === commandId);
+      data.commands = data.commands.filter((item) => item.id !== commandId);
+      if (Array.isArray(data.settings.bubbleElements)) {
+        data.settings.bubbleElements = data.settings.bubbleElements.filter((item) => item !== `cmd:${commandId}`);
+      }
+      save();
+      return row ? { ...row } : null;
     },
     getScratchpad() {
       return data.scratchpad || "";

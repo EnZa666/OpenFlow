@@ -11,6 +11,7 @@ const providers = require("../src/providers");
 const flow = require("../src/flow");
 const audio = require("../src/audio");
 const parakeet = require("../src/parakeet");
+const commands = require("../src/commands");
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
@@ -243,7 +244,7 @@ function placeBar(width, height) {
   if (hidingBar) return;
   if (!overlayWindow || overlayWindow.isDestroyed()) return;
   const area = screen.getPrimaryDisplay().workArea;
-  const safeWidth = Math.max(56, Math.min(420, Math.round(Number(width) || 72)));
+  const safeWidth = Math.max(56, Math.min(640, Math.round(Number(width) || 72)));
   const safeHeight = Math.max(18, Math.min(460, Math.round(Number(height) || 18)));
   const next = {
     x: Math.round(area.x + (area.width - safeWidth) / 2),
@@ -529,6 +530,31 @@ function writeKey(value) {
   fs.writeFileSync(file, payload);
 }
 
+const baseBubbleElements = ["voice", "note", "tune", "shot"];
+
+function commandsDir() {
+  return path.join(app.getPath("userData"), "commands");
+}
+
+// Built-in elements plus one "cmd:<id>" element per stored command.
+function validBubbleIds() {
+  return [...baseBubbleElements, ...(store ? store.listCommands().map((row) => `cmd:${row.id}`) : [])];
+}
+
+function ensureCommandsScripts() {
+  if (!store) return;
+  const dir = commandsDir();
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    for (const cmd of store.listCommands()) {
+      const p = commands.scriptPath(dir, cmd);
+      if (!fs.existsSync(p)) {
+        commands.writeScript(dir, cmd);
+      }
+    }
+  } catch {}
+}
+
 function publicSettings() {
   const settings = store.getSettings();
   const preset = providers.defaultsFor(settings.provider);
@@ -538,9 +564,10 @@ function publicSettings() {
   const dictationMode = settings.dictationMode === "toggle" ? "toggle" : "hold";
   const validFloatingBubble = ["active", "dimmed", "hidden"];
   const floatingBubble = validFloatingBubble.includes(settings.floatingBubble) ? settings.floatingBubble : "active";
-  const defaultElements = ["voice", "note", "tune", "shot"];
+  const defaultElements = baseBubbleElements;
+  const validIds = validBubbleIds();
   const bubbleElements = Array.isArray(settings.bubbleElements)
-    ? settings.bubbleElements.filter((id) => defaultElements.includes(id))
+    ? settings.bubbleElements.filter((id) => validIds.includes(id))
     : defaultElements;
   return {
     ...settings,
@@ -567,9 +594,9 @@ function applyFloatingBubbleState() {
   if (!store || !overlayWindow || overlayWindow.isDestroyed()) return;
   const settings = store.getSettings();
   const mode = settings.floatingBubble || "active";
-  const elements = Array.isArray(settings.bubbleElements) && settings.bubbleElements.length
-    ? settings.bubbleElements
-    : ["voice", "note", "tune", "shot"];
+  const validIds = validBubbleIds();
+  const filtered = Array.isArray(settings.bubbleElements) ? settings.bubbleElements.filter((id) => validIds.includes(id)) : [];
+  const elements = filtered.length ? filtered : baseBubbleElements;
   overlayWindow.setOpacity(1);
   if (mode === "hidden" && !dictating) {
     overlayWindow.setIgnoreMouseEvents(true, { forward: true });
@@ -582,6 +609,7 @@ function applyFloatingBubbleState() {
     floatingBubble: mode,
     bubbleElements: elements,
     voiceNoteButton: settings.voiceNoteButton !== false,
+    commands: store.listCommands().map((row) => ({ id: row.id, name: row.name, type: row.type })),
   });
 }
 
@@ -1117,6 +1145,24 @@ async function openFlameshot() {
   return true;
 }
 
+function refreshMain() {
+  if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) {
+    mainWindow.webContents.send("desk-refresh", {});
+  }
+}
+
+function reportCommandFailure(result) {
+  store.addNotification({ title: "Command", body: result.error });
+  sendOverlay({ mode: "error" });
+  dialog.showMessageBox({
+    type: result.code === "denied" ? "warning" : "error",
+    title: "OpenFlow Commands",
+    message: result.code === "denied" ? "Administrator permission declined" : "Command could not be run",
+    detail: result.error,
+    buttons: ["OK"],
+  }).catch(() => {});
+}
+
 const actions = {
   "mic.repair": () => ensureMicrophone(),
   "settings.get": () => publicSettings(),
@@ -1137,9 +1183,9 @@ const actions = {
     if (payload && validFloatingBubble.includes(payload.floatingBubble)) {
       patch.floatingBubble = payload.floatingBubble;
     }
-    const defaultElements = ["voice", "note", "tune", "shot"];
     if (payload && Array.isArray(payload.bubbleElements)) {
-      const filtered = payload.bubbleElements.filter((id) => defaultElements.includes(id));
+      const validIds = validBubbleIds();
+      const filtered = payload.bubbleElements.filter((id, index, list) => validIds.includes(id) && list.indexOf(id) === index);
       if (filtered.length) patch.bubbleElements = filtered;
     }
     if (payload && typeof payload.voiceNoteButton === "boolean") {
@@ -1217,6 +1263,43 @@ const actions = {
     pendingRefresh = null;
     return value || {};
   },
+  "commands.validateName": (payload) => commands.validateName(payload && payload.name, store.listCommands()),
+  "commands.create": (payload) => {
+    const saved = store.createCommand(payload || {});
+    try {
+      commands.writeScript(commandsDir(), saved);
+    } catch (error) {
+      store.deleteCommand(saved.id);
+      throw error;
+    }
+    refreshMain();
+    return saved;
+  },
+  "commands.save": (payload) => {
+    const saved = store.saveCommand(payload || {});
+    commands.writeScript(commandsDir(), saved);
+    refreshMain();
+    return saved;
+  },
+  "commands.delete": (payload) => {
+    const removed = store.deleteCommand(payload && payload.id);
+    if (removed) commands.removeScript(commandsDir(), removed);
+    applyFloatingBubbleState();
+    refreshMain();
+    return true;
+  },
+  // Only ever triggered by a click on the bubble element; never run automatically.
+  "commands.run": async (payload) => {
+    const row = store.getCommand(payload && payload.id);
+    if (!row) {
+      const result = { ok: false, code: "missing", error: "This command no longer exists." };
+      reportCommandFailure(result);
+      return result;
+    }
+    const result = await commands.run(commandsDir(), row);
+    if (!result.ok) reportCommandFailure(result);
+    return result;
+  },
   "pads.list": () => store.listPads(),
   "pads.save": (payload) => {
     const saved = store.savePad(payload || {});
@@ -1235,6 +1318,7 @@ const actions = {
     dictionary: store.listDictionary(),
     history: store.listHistory(),
     pads: store.listPads(),
+    commands: store.listCommands(),
     usage: flow.usageReport(store.listHistory()),
     notes: store.listNotes(),
     meetings: store.listMeetings(),
@@ -1489,6 +1573,7 @@ if (!gotLock) {
       session.defaultSession.setDevicePermissionHandler((details) => details.deviceType === "microphone" || details.deviceType === "audio");
     }
     store = createStore(path.join(app.getPath("userData"), "openflow.json"));
+    ensureCommandsScripts();
     await runModelInstallerIfNeeded();
     syncSttEngine();
     applyFloatingBubbleState();

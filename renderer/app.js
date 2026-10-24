@@ -3,6 +3,7 @@
 const views = [
   ["dictate", "Dictation", '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="6" y="1.5" width="4" height="7.5" rx="2"></rect><path d="M4 8a4 4 0 0 0 8 0M8 12v2"></path></svg>'],
   ["notes", "Notes", '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5h5.5L12 5v8.5H4z"></path><path d="M9.2 2.6V5.2H12"></path></svg>'],
+  ["commands", "Commands", '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2.2"></rect><path d="M4.5 5.5l2.5 2.5-2.5 2.5M8.5 10.5h3"></path></svg>'],
   ["usage", "Usage", '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 12.5V9M6.5 12.5V6.5M10 12.5V4M13.5 12.5V8"></path></svg>'],
   ["settings", "Settings", '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.1"></circle><path d="M8 2.2v1.5M8 12.3v1.5M2.2 8h1.5M12.3 8h1.5M3.9 3.9l1.1 1.1M11 11l1.1 1.1M12.1 3.9 11 5M5 11l-1.1 1.1"></path></svg>'],
 ];
@@ -11,7 +12,11 @@ const state = {
   desk: null,
   view: "dictate",
   editor: null,
+  commandEditor: null,
+  commandWizard: null,
+  commandSearch: "",
   confirmDeleteId: null,
+  confirmDeleteCommandId: null,
   confirmSttEngine: null,
   askKey: false,
   onboardingStep: null,
@@ -44,6 +49,64 @@ function voiceComboHtml(withVoiceNote, removable) {
     ? `<button type="button" class="elem-minus-btn elem-minus-vnote" data-vnote-remove title="Remove ${VOICE_NOTE_DEF.name}" aria-label="Remove ${VOICE_NOTE_DEF.name}">−</button>`
     : "";
   return `<div class="elem-voice-combo"><div class="elem-vtrack" aria-hidden="true"></div><div class="elem-vnote" title="${VOICE_NOTE_DEF.name}"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.1" stroke="currentColor" stroke-width="1.7"></circle><circle cx="8" cy="8" r="2.7" fill="currentColor"></circle></svg>${minus}</div><div class="elem-mic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg></div></div>`;
+}
+
+
+const CMD_TYPE_INFO = {
+  powershell: {
+    id: "powershell",
+    title: "PowerShell",
+    extension: ".ps1",
+    desc: "Windows PowerShell script. Executes via powershell.exe with visible console.",
+    logo: '<svg width="40" height="40" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="10" fill="#012456"/><path d="M12 16L22 24L12 32" stroke="#4db2ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 32H36" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/></svg>',
+  },
+  bat: {
+    id: "bat",
+    title: "Bat",
+    extension: ".bat",
+    desc: "Windows batch script. Executes via cmd.exe with visible console.",
+    logo: '<svg width="40" height="40" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="10" fill="#2d3748"/><path d="M14 14H28L34 20V34H14V14Z" fill="#edf2f7" stroke="#cbd5e0" stroke-width="1.5"/><path d="M28 14V20H34" fill="#cbd5e0"/><circle cx="24" cy="27" r="4" fill="#3182ce"/><path d="M24 20V22M24 32V34M17 27H19M29 27H31M19 22L20.5 23.5M27.5 30.5L29 32M19 32L20.5 30.5M27.5 23.5L29 22" stroke="#3182ce" stroke-width="2" stroke-linecap="round"/></svg>',
+  },
+  cmd: {
+    id: "cmd",
+    title: "CMD",
+    extension: ".cmd",
+    desc: "Windows command script. Executes via cmd.exe with visible console.",
+    logo: '<svg width="40" height="40" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="10" fill="#1e1e1e"/><rect x="2" y="2" width="44" height="44" rx="8" stroke="#333333" stroke-width="1.5"/><path d="M12 18L18 24L12 30" stroke="#f5f5f5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 30H32" stroke="#22c55e" stroke-width="3.5" stroke-linecap="round"/><text x="34" y="20" fill="#a3a3a3" font-size="9" font-family="monospace" font-weight="bold">CMD</text></svg>',
+  },
+};
+
+const SCRIPT_BUBBLE_HTML = '<div class="elem-single" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="13" height="13" rx="2.2"></rect><path d="M5.5 6.5l2.75 2.5-2.75 2.5M10 11.5h2.5"></path></svg></div>';
+const SCRIPT_MINI_ICON = '<svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="13" height="13" rx="2.2"></rect><path d="M5.5 6.5l2.75 2.5-2.75 2.5M10 11.5h2.5"></path></svg>';
+
+function getBubbleElementDef(key) {
+  if (BUBBLE_ELEMENT_DEFS[key]) return BUBBLE_ELEMENT_DEFS[key];
+  if (key && key.startsWith("cmd:")) {
+    const cmdId = key.slice(4);
+    const cmd = ((state.desk && state.desk.commands) || []).find((c) => c.id === cmdId);
+    if (cmd) {
+      return {
+        id: key,
+        name: cmd.name,
+        html: SCRIPT_BUBBLE_HTML,
+        miniIcon: SCRIPT_MINI_ICON,
+      };
+    }
+  }
+  return null;
+}
+
+function validateCommandName(name, existing, editingId) {
+  const val = String(name == null ? "" : name);
+  if (!val.trim()) return "Please enter a name.";
+  if (val !== val.trim()) return "The name must not start or end with a space.";
+  if (val.length > 48) return "The name may have at most 48 characters.";
+  if (!/^[\p{L}\p{N} _-]+$/u.test(val)) return "Use only letters, numbers, spaces, hyphens and underscores.";
+  if (/^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i.test(val)) return "This name is reserved by Windows.";
+  const lower = val.toLowerCase();
+  const list = (existing || []).filter((item) => !editingId || item.id !== editingId);
+  if (list.some((item) => String(item.name).toLowerCase() === lower)) return "A command with this name already exists.";
+  return "";
 }
 
 const BUBBLE_ELEMENT_DEFS = {
@@ -100,14 +163,19 @@ function minutes(durationMs) {
 }
 
 function captureEditor() {
-  if (!state.editor) return;
-  const editor = document.querySelector("#editor");
-  const expectedKey = state.editor.id || "__draft__";
-  if (!editor || editor.dataset.id !== expectedKey) return;
-  const title = editor.querySelector("#editor-title");
-  const body = editor.querySelector("#editor-body");
-  if (!title || !body) return;
-  state.editor = { ...state.editor, title: title.value, content: body.value };
+  if (state.editor) {
+    const editor = document.querySelector("#editor");
+    const expectedKey = state.editor.id || "__draft__";
+    if (editor && editor.dataset.id === expectedKey) {
+      const title = editor.querySelector("#editor-title");
+      const body = editor.querySelector("#editor-body");
+      if (title && body) state.editor = { ...state.editor, title: title.value, content: body.value };
+    }
+  }
+  if (state.commandEditor) {
+    const body = document.querySelector("#cmd-editor-body");
+    if (body) state.commandEditor.content = body.value;
+  }
 }
 
 async function load(pending) {
@@ -119,7 +187,10 @@ async function load(pending) {
   state.desk = desk;
   const settings = desk.settings || {};
   if (!state.draftBubbleElements) {
-    state.draftBubbleElements = Array.isArray(settings.bubbleElements) ? [...settings.bubbleElements] : ["voice", "note", "tune", "shot"];
+    const defaultElements = ["voice", "note", "tune", "shot"];
+    const saved = Array.isArray(settings.bubbleElements) ? [...settings.bubbleElements] : defaultElements;
+    const allValid = [...defaultElements, ...((desk.commands || []).map((c) => `cmd:${c.id}`))];
+    state.draftBubbleElements = saved.filter((k) => allValid.includes(k));
   }
   if (!state.draftFloatingBubble) {
     state.draftFloatingBubble = settings.floatingBubble || "active";
@@ -190,16 +261,20 @@ function render() {
   document.querySelector("#title").textContent = views.find(([id]) => id === state.view)[1];
   const viewHead = document.querySelector(".view-head");
   const view = document.querySelector("#view");
-  const showingEditor = state.view === "notes" && Boolean(state.editor);
+  const showingEditor = (state.view === "notes" && Boolean(state.editor)) ||
+                        (state.view === "commands" && Boolean(state.commandEditor));
   if (viewHead) viewHead.hidden = showingEditor;
   view.hidden = showingEditor;
   if (!showingEditor) {
     if (state.view === "notes") view.innerHTML = notesHtml();
+    else if (state.view === "commands") view.innerHTML = commandsHtml();
     else if (state.view === "usage") view.innerHTML = usageHtml();
     else if (state.view === "settings") view.innerHTML = settingsHtml();
     else view.innerHTML = dictateHtml();
   }
   paintEditor();
+  paintCommandEditor();
+  paintCommandWizard();
   paintOnboarding();
   paintConfirmModal();
 
@@ -250,6 +325,45 @@ function dictateHtml() {
     }).join("")}</div>`
     : "";
   return `${hero}${latest}${recentHtml}`;
+}
+
+
+function commandsHtml() {
+  const allCommands = (state.desk && state.desk.commands) || [];
+  const query = (state.commandSearch || "").trim().toLowerCase();
+  const list = query
+    ? allCommands.filter((c) => (`${c.name} ${c.extension} ${c.content}`).toLowerCase().includes(query))
+    : allCommands;
+
+  const searchHtml = `<div class="commands-search-bar"><div class="commands-search-input-wrap"><svg class="search-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg><input type="search" id="commands-search-input" placeholder="Search commands..." value="${esc(state.commandSearch || "")}" autocomplete="off" spellcheck="false">${state.commandSearch ? '<button type="button" class="search-clear-btn" id="commands-search-clear" title="Clear search">✕</button>' : ''}</div></div>`;
+
+  const fab = `<button type="button" class="notes-fab commands-fab" data-new-command aria-label="Erstellen" title="Erstellen"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 3v10M3 8h10"></path></svg></button>`;
+
+  if (!allCommands.length) {
+    return `${searchHtml}<p class="empty">No commands yet. Tap the button in the bottom right to create your first script.</p>${fab}`;
+  }
+  if (!list.length) {
+    return `${searchHtml}<p class="empty">No commands match "${esc(state.commandSearch)}".</p>${fab}`;
+  }
+
+  const trashSvg = '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M3.5 5h11M7 5V3.6c0-.6.5-1.1 1.1-1.1h1.8c.6 0 1.1.5 1.1 1.1V5M5.2 5l.6 9.4c.05.9.8 1.6 1.7 1.6h3c.9 0 1.65-.7 1.7-1.6L12.8 5M7.6 8.2v4.5M10.4 8.2v4.5"></path></svg>';
+  const playSvg = '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M4.5 3.5v9l8-4.5z"></path></svg>';
+
+  const itemsHtml = list.map((cmd) => {
+    const preview = String(cmd.content || "").trim().replace(/\s+/g, " ") || "Empty script — click to edit";
+    const typeLabel = (cmd.type || "bat").toUpperCase();
+    return `<div class="note-box command-box" role="listitem">
+      <div class="command-type-pill ${esc(cmd.type)}">${esc(typeLabel)}</div>
+      <button type="button" class="note-open-btn command-open-btn" data-command-open="${esc(cmd.id)}">
+        <strong>${esc(cmd.name)}<span class="command-ext-suffix">${esc(cmd.extension)}</span></strong>
+        <span>${esc(preview)}</span>
+      </button>
+      <button type="button" class="command-run-btn" data-command-run="${esc(cmd.id)}" title="Run with Administrator privileges" aria-label="Run command">${playSvg}</button>
+      <button type="button" class="note-delete-btn" data-command-delete="${esc(cmd.id)}" title="Delete command" aria-label="Delete command">${trashSvg}</button>
+    </div>`;
+  }).join("");
+
+  return `${searchHtml}<div class="notes-list" role="list">${itemsHtml}</div>${fab}`;
 }
 
 function notesHtml() {
@@ -338,25 +452,28 @@ function openaiCardHtml(sttEngine) {
   const bubbleCard = `<div class="settings-card"><div class="section-label">Floating Bubble Appearance</div><div class="bubble-style-grid" role="radiogroup" aria-label="Floating Bubble Appearance">${bubbleOptionsHtml}</div></div>`;
 
   // Manage Elements Preview and Customization
-  const currentElems = state.draftBubbleElements || ["voice", "note", "tune", "shot"];
-  const allKeys = ["voice", "note", "tune", "shot"];
+  const allCommands = (state.desk && state.desk.commands) || [];
+  const commandKeys = allCommands.map((c) => `cmd:${c.id}`);
+  const allKeys = ["voice", "note", "tune", "shot", ...commandKeys];
+  const currentElems = (state.draftBubbleElements || ["voice", "note", "tune", "shot"]).filter((k) => allKeys.includes(k));
   const removedKeys = allKeys.filter((k) => !currentElems.includes(k));
 
   const voiceNoteOn = state.draftVoiceNote !== false;
   const previewItemsHtml = currentElems.map((key) => {
-    const def = BUBBLE_ELEMENT_DEFS[key];
+    const def = getBubbleElementDef(key);
     if (!def) return "";
     const canRemove = currentElems.length > 1;
     const minusBtn = canRemove
-      ? `<button type="button" class="elem-minus-btn" data-elem-remove="${key}" title="Remove ${def.name}" aria-label="Remove ${def.name}">−</button>`
+      ? `<button type="button" class="elem-minus-btn" data-elem-remove="${key}" title="Remove ${esc(def.name)}" aria-label="Remove ${esc(def.name)}">−</button>`
       : "";
     const html = key === "voice" ? voiceComboHtml(voiceNoteOn, true) : def.html;
-    return `<div class="bubble-preview-item" draggable="true" data-elem-id="${key}" title="${def.name} (drag to reorder)">${minusBtn}${html}</div>`;
+    return `<div class="bubble-preview-item" draggable="true" data-elem-id="${key}" title="${esc(def.name)} (drag to reorder)">${minusBtn}${html}</div>`;
   }).join("");
 
   const shelfItems = removedKeys.map((k) => {
-    const def = BUBBLE_ELEMENT_DEFS[k];
-    return `<button type="button" class="removed-elem-btn" draggable="true" data-shelf-elem="${k}" data-elem-add="${k}" title="Add back ${def.name} (click or drag onto the bubble)">${def.miniIcon}<span>${def.name}</span><span class="elem-plus-badge">+</span></button>`;
+    const def = getBubbleElementDef(k);
+    if (!def) return "";
+    return `<button type="button" class="removed-elem-btn" draggable="true" data-shelf-elem="${k}" data-elem-add="${k}" title="Add back ${esc(def.name)} (click or drag onto the bubble)">${def.miniIcon}<span>${esc(def.name)}</span><span class="elem-plus-badge">+</span></button>`;
   });
   if (!voiceNoteOn && currentElems.includes("voice")) {
     shelfItems.push(`<button type="button" class="removed-elem-btn" draggable="true" data-shelf-elem="vnote" data-vnote-add title="Add back ${VOICE_NOTE_DEF.name} (click or drop anywhere on the bubble — it snaps back to the mic)">${VOICE_NOTE_DEF.miniIcon}<span>${VOICE_NOTE_DEF.name}</span><span class="elem-plus-badge">+</span></button>`);
@@ -370,11 +487,60 @@ function openaiCardHtml(sttEngine) {
   return `${sttCard}${dictationCard}${bubbleCard}${manageCard}`;
 }
 
+function paintCommandEditor() {
+  const editor = document.querySelector("#editor");
+  if (!state.commandEditor || state.view !== "commands") {
+    if (state.view !== "notes" || !state.editor) {
+      editor.hidden = true;
+      editor.dataset.id = "";
+    }
+    return;
+  }
+  const cmd = state.commandEditor;
+  const editorKey = `cmd_${cmd.id || "__new__"}`;
+  if (editor.dataset.id === editorKey && editor.querySelector("#cmd-editor-body")) {
+    editor.hidden = false;
+    return;
+  }
+  editor.dataset.id = editorKey;
+  editor.hidden = false;
+  const typeUpper = (cmd.type || "bat").toUpperCase();
+  editor.innerHTML = `<header class="note-bubble-head cmd-editor-head"><div class="cmd-meta-group"><span class="command-type-pill ${esc(cmd.type)}">${esc(typeUpper)}</span><div class="cmd-title-display"><strong>${esc(cmd.name)}</strong><span class="cmd-fixed-ext">${esc(cmd.extension)}</span></div><span class="cmd-badge-fixed" title="Name, type and extension are permanent">Fixed</span></div><button type="button" id="cmd-editor-back">Back</button></header><textarea id="cmd-editor-body" placeholder="Write or paste your script here..." spellcheck="false" aria-label="Script content">${esc(cmd.content || "")}</textarea><footer class="note-bubble-foot cmd-editor-foot">${cmd.id ? '<button type="button" id="cmd-editor-run" class="btn-secondary" title="Run with Administrator privileges"><svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M4.5 3.5v9l8-4.5z"></path></svg><span>Run</span></button>' : ''}<button type="button" id="cmd-editor-copy">Copy</button><button type="button" id="cmd-editor-save">Save</button></footer>`;
+  const body = editor.querySelector("#cmd-editor-body");
+  if (body) body.focus();
+}
+
+function paintCommandWizard() {
+  const host = document.querySelector("#command-modal");
+  if (!host) return;
+  if (!state.commandWizard) {
+    host.hidden = true;
+    host.innerHTML = "";
+    return;
+  }
+  host.hidden = false;
+  const wizard = state.commandWizard;
+  if (wizard.step === 1) {
+    host.innerHTML = `<div class="onboarding-card" role="dialog" aria-modal="true" style="max-width: 580px;"><div><h2>Create Command</h2><p class="sub">Step 1 of 3: Select the script type.</p></div><div class="cmd-types-grid"><div class="cmd-type-card" role="button" tabindex="0" data-cmd-type-choose="bat"><div class="cmd-type-logo">${CMD_TYPE_INFO.bat.logo}</div><div class="cmd-type-title">Bat <span class="cmd-type-ext-badge">.bat</span></div><p class="cmd-type-desc">Windows Batch Script. Runs in cmd.exe with a visible console.</p></div><div class="cmd-type-card" role="button" tabindex="0" data-cmd-type-choose="powershell"><div class="cmd-type-logo">${CMD_TYPE_INFO.powershell.logo}</div><div class="cmd-type-title">PowerShell <span class="cmd-type-ext-badge">.ps1</span></div><p class="cmd-type-desc">Windows PowerShell Script. Runs in powershell.exe with a visible console.</p></div><div class="cmd-type-card" role="button" tabindex="0" data-cmd-type-choose="cmd"><div class="cmd-type-logo">${CMD_TYPE_INFO.cmd.logo}</div><div class="cmd-type-title">CMD <span class="cmd-type-ext-badge">.cmd</span></div><p class="cmd-type-desc">Windows Command File. Runs in cmd.exe with a visible console.</p></div></div><div class="onboarding-actions" style="margin-top: 6px;"><button type="button" class="btn-secondary" data-cmd-wizard-cancel>Cancel</button></div></div>`;
+    return;
+  }
+
+  const typeInfo = CMD_TYPE_INFO[wizard.type] || CMD_TYPE_INFO.powershell;
+  host.innerHTML = `<div class="onboarding-card" role="dialog" aria-modal="true"><div><h2>Name Your Command</h2><p class="sub">Step 2 of 3: Enter a name for your ${esc(typeInfo.title)} script. The name, type and extension will be permanent.</p></div><div><div class="cmd-name-input-group"><input type="text" id="cmd-name-input" placeholder="e.g. Restart Spooler" value="${esc(wizard.name)}" autocomplete="off" spellcheck="false" maxlength="48"><span class="cmd-name-ext">${esc(typeInfo.extension)}</span></div><div class="cmd-input-error" id="cmd-name-error">${esc(wizard.error || "")}</div></div><div class="onboarding-actions"><button type="button" class="btn-secondary" data-cmd-wizard-back>Back</button><button type="button" class="btn-primary" data-cmd-wizard-next>Continue</button></div></div>`;
+  const input = host.querySelector("#cmd-name-input");
+  if (input) {
+    input.focus();
+    input.selectionStart = input.selectionEnd = input.value.length;
+  }
+}
+
 function paintEditor() {
   const editor = document.querySelector("#editor");
   if (!state.editor || state.view !== "notes") {
-    editor.hidden = true;
-    editor.dataset.id = "";
+    if (state.view !== "commands" || !state.commandEditor) {
+      editor.hidden = true;
+      editor.dataset.id = "";
+    }
     return;
   }
   const editorKey = state.editor.id || "__draft__";
@@ -500,6 +666,13 @@ function paintConfirmModal() {
     host.innerHTML = `<div class="onboarding-card" role="dialog" aria-modal="true"><div><h2>Switch Speech-to-Text Model?</h2><p class="sub">Use <strong>${esc(label)}</strong> for all dictation sessions?</p></div><div class="onboarding-actions"><button type="button" class="btn-secondary" data-confirm-cancel>Cancel</button><button type="button" class="btn-primary" data-confirm-stt-ok>OK</button></div></div>`;
     return;
   }
+  if (state.confirmDeleteCommandId) {
+    const cmd = ((state.desk && state.desk.commands) || []).find((row) => row.id === state.confirmDeleteCommandId);
+    const title = cmd && cmd.name ? `${cmd.name}${cmd.extension}` : "this command";
+    host.hidden = false;
+    host.innerHTML = `<div class="onboarding-card" role="dialog" aria-modal="true"><div><h2>Delete Command?</h2><p class="sub">Are you sure you want to delete "${esc(title)}"? This will also remove it from the Bubble and cannot be undone.</p></div><div class="onboarding-actions"><button type="button" class="btn-secondary" data-confirm-cancel>Cancel</button><button type="button" class="btn-danger" data-confirm-delete-command>Delete</button></div></div>`;
+    return;
+  }
   if (!state.confirmDeleteId) {
     host.hidden = true;
     host.innerHTML = "";
@@ -622,8 +795,11 @@ document.addEventListener("DOMContentLoaded", () => {
     stopEditorVoice();
     state.view = button.dataset.nav;
     state.editor = null;
+    state.commandEditor = null;
+    state.commandWizard = null;
     state.confirmDeleteId = null;
-    if (state.view === "notes" || state.view === "usage" || state.view === "settings") load().catch(() => {});
+    state.confirmDeleteCommandId = null;
+    if (state.view === "notes" || state.view === "commands" || state.view === "usage" || state.view === "settings") load().catch(() => {});
     else render();
   });
 
@@ -638,6 +814,59 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.querySelector("#view").addEventListener("click", async (event) => {
+    
+    const newCmdBtn = event.target.closest("[data-new-command]");
+    if (newCmdBtn) {
+      state.commandWizard = { step: 1, type: "powershell", name: "", error: "" };
+      paintCommandWizard();
+      return;
+    }
+
+    const clearSearch = event.target.closest("#commands-search-clear");
+    if (clearSearch) {
+      state.commandSearch = "";
+      render();
+      return;
+    }
+
+    const openCmd = event.target.closest("[data-command-open]");
+    if (openCmd) {
+      const cmd = ((state.desk && state.desk.commands) || []).find((c) => c.id === openCmd.dataset.commandOpen);
+      if (cmd) {
+        state.commandEditor = { id: cmd.id, isNew: false, name: cmd.name, type: cmd.type, extension: cmd.extension, content: cmd.content };
+        render();
+      }
+      return;
+    }
+
+    const runCmd = event.target.closest("[data-command-run]");
+    if (runCmd && window.openflow) {
+      const cmdId = runCmd.dataset.commandRun;
+      runCmd.disabled = true;
+      const originalHtml = runCmd.innerHTML;
+      runCmd.innerHTML = '<span class="note-spin" style="width:12px;height:12px;display:inline-block;border:1.5px solid var(--muted);border-top-color:var(--fg);border-radius:50%;animation:ofspin .7s linear infinite;"></span>';
+      window.openflow.dispatch("commands.run", { id: cmdId }).then((res) => {
+        if (res && res.ok) {
+          runCmd.innerHTML = '✓';
+          setTimeout(() => { runCmd.innerHTML = originalHtml; runCmd.disabled = false; }, 1200);
+        } else {
+          runCmd.innerHTML = originalHtml;
+          runCmd.disabled = false;
+        }
+      }).catch(() => {
+        runCmd.innerHTML = originalHtml;
+        runCmd.disabled = false;
+      });
+      return;
+    }
+
+    const delCmd = event.target.closest("[data-command-delete]");
+    if (delCmd) {
+      state.confirmDeleteCommandId = delCmd.dataset.commandDelete;
+      paintConfirmModal();
+      return;
+    }
+
     const copyBtn = event.target.closest("[data-copy-text]");
     if (copyBtn && window.openflow) {
       await window.openflow.dispatch("clipboard.copy", { text: copyBtn.dataset.copyText });
@@ -787,6 +1016,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  
+  const viewElement = document.querySelector("#view");
+  if (viewElement) {
+    viewElement.addEventListener("input", (event) => {
+      if (event.target && event.target.id === "commands-search-input") {
+        state.commandSearch = event.target.value;
+        const viewEl = document.querySelector("#view");
+        if (viewEl && state.view === "commands") {
+          viewEl.innerHTML = commandsHtml();
+          const nextInput = viewEl.querySelector("#commands-search-input");
+          if (nextInput) {
+            nextInput.focus();
+            nextInput.selectionStart = nextInput.selectionEnd = nextInput.value.length;
+          }
+        }
+      }
+    });
+  }
+
   document.querySelector("#confirm-modal").addEventListener("click", async (event) => {
     if (event.target.closest("[data-confirm-cancel]") || event.target === document.querySelector("#confirm-modal")) {
       state.confirmDeleteId = null;
@@ -808,10 +1056,162 @@ document.addEventListener("DOMContentLoaded", () => {
       if (state.editor && state.editor.id === deletingId) state.editor = null;
       await window.openflow.dispatch("pads.delete", { id: deletingId });
       await load();
+      return;
+    }
+    if (event.target.closest("[data-confirm-delete-command]") && state.confirmDeleteCommandId) {
+      const deletingId = state.confirmDeleteCommandId;
+      state.confirmDeleteCommandId = null;
+      if (state.commandEditor && state.commandEditor.id === deletingId) state.commandEditor = null;
+      await window.openflow.dispatch("commands.delete", { id: deletingId });
+      await load();
     }
   });
 
+  
+  const cmdModal = document.querySelector("#command-modal");
+  if (cmdModal) {
+    cmdModal.addEventListener("click", (event) => {
+      if (event.target.closest("[data-cmd-wizard-cancel]") || event.target === cmdModal) {
+        state.commandWizard = null;
+        paintCommandWizard();
+        return;
+      }
+      const typeChoose = event.target.closest("[data-cmd-type-choose]");
+      if (typeChoose && state.commandWizard) {
+        state.commandWizard.type = typeChoose.dataset.cmdTypeChoose;
+        state.commandWizard.step = 2;
+        paintCommandWizard();
+        return;
+      }
+      if (event.target.closest("[data-cmd-wizard-back]") && state.commandWizard) {
+        state.commandWizard.step = 1;
+        state.commandWizard.error = "";
+        paintCommandWizard();
+        return;
+      }
+      if (event.target.closest("[data-cmd-wizard-next]") && state.commandWizard) {
+        const input = cmdModal.querySelector("#cmd-name-input");
+        const val = input ? input.value : state.commandWizard.name;
+        const error = validateCommandName(val, (state.desk && state.desk.commands) || []);
+        if (error) {
+          state.commandWizard.name = val;
+          state.commandWizard.error = error;
+          const errEl = cmdModal.querySelector("#cmd-name-error");
+          if (errEl) errEl.textContent = error;
+          if (input) input.focus();
+          return;
+        }
+        const trimmedName = val.trim();
+        const typeInfo = CMD_TYPE_INFO[state.commandWizard.type] || CMD_TYPE_INFO.powershell;
+        state.commandWizard = null;
+        state.commandEditor = {
+          id: "",
+          isNew: true,
+          name: trimmedName,
+          type: typeInfo.id,
+          extension: typeInfo.extension,
+          content: "",
+        };
+        render();
+      }
+    });
+
+    cmdModal.addEventListener("input", (event) => {
+      if (event.target && event.target.id === "cmd-name-input" && state.commandWizard) {
+        state.commandWizard.name = event.target.value;
+        const error = validateCommandName(event.target.value, (state.desk && state.desk.commands) || []);
+        state.commandWizard.error = error;
+        const errEl = cmdModal.querySelector("#cmd-name-error");
+        if (errEl) errEl.textContent = error;
+      }
+    });
+
+    cmdModal.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && event.target && event.target.id === "cmd-name-input") {
+        event.preventDefault();
+        const nextBtn = cmdModal.querySelector("[data-cmd-wizard-next]");
+        if (nextBtn) nextBtn.click();
+      } else if (event.key === "Escape") {
+        state.commandWizard = null;
+        paintCommandWizard();
+      }
+    });
+  }
+
   document.querySelector("#editor").addEventListener("click", async (event) => {
+    if (event.target.closest("#cmd-editor-back")) {
+      state.commandEditor = null;
+      render();
+      return;
+    }
+    const cmdCopy = event.target.closest("#cmd-editor-copy");
+    if (cmdCopy && window.openflow) {
+      const body = document.querySelector("#cmd-editor-body");
+      await window.openflow.dispatch("clipboard.copy", { text: body ? body.value : "" });
+      cmdCopy.textContent = "Copied";
+      cmdCopy.classList.add("copied");
+      setTimeout(() => {
+        cmdCopy.textContent = "Copy";
+        cmdCopy.classList.remove("copied");
+      }, 1000);
+      return;
+    }
+    const cmdRun = event.target.closest("#cmd-editor-run");
+    if (cmdRun && window.openflow && state.commandEditor) {
+      cmdRun.disabled = true;
+      const originalText = cmdRun.textContent;
+      cmdRun.textContent = "Running...";
+      // If unsaved or content changed, save first
+      const body = document.querySelector("#cmd-editor-body");
+      const content = body ? body.value : (state.commandEditor.content || "");
+      let cmdId = state.commandEditor.id;
+      if (!cmdId) {
+        const saved = await window.openflow.dispatch("commands.create", {
+          name: state.commandEditor.name,
+          type: state.commandEditor.type,
+          content,
+        });
+        cmdId = saved.id;
+        state.commandEditor.id = saved.id;
+        state.commandEditor.isNew = false;
+      } else {
+        await window.openflow.dispatch("commands.save", { id: cmdId, content });
+      }
+      const res = await window.openflow.dispatch("commands.run", { id: cmdId });
+      cmdRun.disabled = false;
+      if (res && res.ok) {
+        cmdRun.textContent = "Started ✓";
+        setTimeout(() => { cmdRun.textContent = originalText; }, 1200);
+      } else {
+        cmdRun.textContent = originalText;
+      }
+      return;
+    }
+    const cmdSave = event.target.closest("#cmd-editor-save");
+    if (cmdSave && state.commandEditor && window.openflow) {
+      cmdSave.disabled = true;
+      const body = document.querySelector("#cmd-editor-body");
+      const content = body ? body.value : (state.commandEditor.content || "");
+      cmdSave.textContent = "Saved";
+      cmdSave.classList.add("saved");
+      if (state.commandEditor.isNew) {
+        await window.openflow.dispatch("commands.create", {
+          name: state.commandEditor.name,
+          type: state.commandEditor.type,
+          content,
+        });
+      } else {
+        await window.openflow.dispatch("commands.save", {
+          id: state.commandEditor.id,
+          content,
+        });
+      }
+      await new Promise((resolve) => setTimeout(resolve, 260));
+      state.commandEditor = null;
+      await load();
+      return;
+    }
+
     if (event.target.closest("#editor-back")) {
       stopEditorVoice();
       state.editor = null;

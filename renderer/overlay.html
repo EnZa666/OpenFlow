@@ -158,6 +158,8 @@
     const voiceGroup = document.querySelector("#voice-group");
     let floatingBubble = "active";
     let bubbleElements = ["voice", "note", "tune", "shot"];
+    let commandsList = [];
+    const commandElements = new Map();
     let voiceNoteButton = true;
     let voiceNext = false;
     let voiceSession = false;
@@ -195,7 +197,13 @@
       let width = 72;
       let height = 18;
       if (mode !== "listening" && mode !== "working" && near) {
-        width = menuOpen ? 300 : 280;
+        const activeIds = Array.isArray(bubbleElements) && bubbleElements.length ? bubbleElements : ["voice", "note", "tune", "shot"];
+        const visibleCount = activeIds.filter((id) => {
+          if (["voice", "note", "tune", "shot"].includes(id)) return true;
+          return id.startsWith("cmd:") && commandsList.some((c) => c.id === id.slice(4));
+        }).length;
+        const expandedWidth = Math.max(280, Math.min(640, visibleCount * 36 + 72));
+        width = menuOpen ? 300 : expandedWidth;
         height = menuOpen ? 440 : 78;
       }
       document.body.dataset.mode = mode;
@@ -250,6 +258,30 @@
       nextFrames(2, send);
     }
 
+    function getOrCreateCommandButton(cmdId) {
+      const cmd = commandsList.find((c) => c.id === cmdId);
+      const name = cmd ? cmd.name : "Command";
+      if (commandElements.has(cmdId)) {
+        const btn = commandElements.get(cmdId);
+        btn.setAttribute("aria-label", name);
+        btn.setAttribute("data-tooltip", name);
+        return btn;
+      }
+      const btn = document.createElement("button");
+      btn.id = `cmd-${cmdId}`;
+      btn.type = "button";
+      btn.className = "cmd-bubble-btn";
+      btn.setAttribute("aria-label", name);
+      btn.setAttribute("data-tooltip", name);
+      btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="13" height="13" rx="2.2"></rect><path d="M5.5 6.5l2.75 2.5-2.75 2.5M10 11.5h2.5"></path></svg>`;
+      btn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (window.openflow) window.openflow.dispatch("commands.run", { id: cmdId });
+      });
+      commandElements.set(cmdId, btn);
+      return btn;
+    }
+
     function applyBubbleConfig() {
       document.body.dataset.bubbleStyle = floatingBubble;
       const elemMap = {
@@ -266,8 +298,21 @@
           el.hidden = true;
         }
       });
+      commandElements.forEach((btn, cmdId) => {
+        if (!activeIds.includes(`cmd:${cmdId}`) || !commandsList.some((c) => c.id === cmdId)) {
+          btn.remove();
+          commandElements.delete(cmdId);
+        }
+      });
       activeIds.forEach((id) => {
-        const el = elemMap[id];
+        let el = null;
+        if (elemMap[id]) el = elemMap[id];
+        else if (id.startsWith("cmd:")) {
+          const cmdId = id.slice(4);
+          if (commandsList.some((c) => c.id === cmdId)) {
+            el = getOrCreateCommandButton(cmdId);
+          }
+        }
         if (el && pill && status) pill.insertBefore(el, status);
       });
       paint();
@@ -292,6 +337,11 @@
         if (!el) return;
         const isActive = activeIds.includes(id);
         el.hidden = !open || !isActive;
+      });
+
+      commandElements.forEach((btn, cmdId) => {
+        const isActive = activeIds.includes(`cmd:${cmdId}`);
+        btn.hidden = !open || !isActive;
       });
 
       const voiceActive = activeIds.includes("voice");
@@ -818,6 +868,7 @@
           if (message.floatingBubble) floatingBubble = message.floatingBubble;
           if (Array.isArray(message.bubbleElements)) bubbleElements = message.bubbleElements;
           if (typeof message.voiceNoteButton === "boolean") voiceNoteButton = message.voiceNoteButton;
+          if (Array.isArray(message.commands)) commandsList = message.commands;
           applyBubbleConfig();
         }
         if (message.type === "start") {
@@ -884,6 +935,14 @@
     });
 
     if (window.openflow) {
+      window.openflow.dispatch("settings.get").then((s) => {
+        if (!s) return;
+        if (s.floatingBubble) floatingBubble = s.floatingBubble;
+        if (Array.isArray(s.bubbleElements)) bubbleElements = s.bubbleElements;
+        if (typeof s.voiceNoteButton === "boolean") voiceNoteButton = s.voiceNoteButton;
+        if (Array.isArray(s.commands)) commandsList = s.commands;
+        applyBubbleConfig();
+      }).catch(() => {});
       window.openflow.on("overlay-state", applyState);
       paint();
     } else {
