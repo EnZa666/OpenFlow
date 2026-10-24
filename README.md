@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/LuiInventions/OpenFlow">
-    <img src="docs/banner.png" alt="OpenFlow — Local-first Voice Dictation & Notes for Windows. Leave a Star on GitHub!" width="100%">
+    <img src="docs/banner.png" alt="OpenFlow v1.2.5 — Local-first Voice Dictation & Notes for Windows. Leave a Star on GitHub!" width="100%">
   </a>
 </p>
 
