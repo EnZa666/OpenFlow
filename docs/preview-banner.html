@@ -8,18 +8,14 @@
       --sand-600: #eeebe3;
       --vast-950: #1a1a1a;
     }
-    * { box-sizing: border-box; }
     html, body { margin: 0; background: var(--vast-950); color: var(--sand-50); font-family: "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
     body { width: 1280px; height: 320px; display: flex; align-items: center; justify-content: space-between; padding: 0 72px; box-sizing: border-box; background: radial-gradient(circle at 85% 20%, #2a2a29 0%, #1a1a1a 65%); }
     .mark { display: flex; align-items: center; gap: 26px; }
     .icon-box { width: 84px; height: 84px; border-radius: 22px; background: #ffffff; display: grid; place-items: center; overflow: hidden; box-shadow: 0 12px 30px rgba(0,0,0,.35); }
     .icon-box img { width: 84px; height: 84px; object-fit: cover; display: block; }
-    .title-row { display: flex; align-items: baseline; gap: 16px; }
     h1 { margin: 0; font-family: Georgia, "Palatino Linotype", serif; font-size: 62px; font-weight: 500; letter-spacing: -0.035em; color: var(--sand-50); }
     p { margin: 8px 0 0; font-size: 21px; color: #c8c8c2; }
     .cta-group { display: flex; align-items: center; gap: 14px; }
-    .release-badge { display: inline-flex; align-items: center; gap: 9px; background: #262624; border: 1px solid #3c3c38; color: #e8e6df; font-weight: 600; border-radius: 999px; padding: 15px 24px; font-size: 19px; letter-spacing: -0.01em; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
-    .release-badge .dot { width: 9px; height: 9px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 10px rgba(34,197,94,0.6); }
     .star { display: inline-flex; align-items: center; gap: 10px; background: var(--sand-50); color: var(--vast-950); font-weight: 650; border-radius: 999px; padding: 15px 26px; font-size: 19px; letter-spacing: -0.01em; box-shadow: 0 8px 24px rgba(0,0,0,.3); }
     .star span { color: #eab308; font-size: 22px; line-height: 1; }
   </style>
@@ -30,14 +26,11 @@
       <img src="logo.png" alt="OpenFlow Logo">
     </div>
     <div>
-      <div class="title-row">
-        <h1>OpenFlow</h1>
-      </div>
+      <h1>OpenFlow</h1>
       <p>Fast local-first voice dictation, notes &amp; screenshot bar for Windows.</p>
     </div>
   </div>
   <div class="cta-group">
-    <div class="release-badge"><span class="dot"></span>v1.2.5</div>
     <div class="star"><span>★</span> Star on GitHub</div>
   </div>
 </body>
