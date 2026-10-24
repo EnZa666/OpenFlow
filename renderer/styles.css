@@ -991,22 +991,35 @@ label.key input:focus, .onboard-input:focus {
   background: #ffffff;
 }
 
-#editor-back {
+#editor-back,
+#cmd-editor-back,
+.editor-close-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 14px;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  padding: 0;
   border-radius: 999px;
-  font-size: 13px;
-  font-weight: 600;
   color: var(--fg);
   background: #ffffff;
   border: 1px solid var(--sand-600);
-  transition: background-color .14s ease, border-color .14s ease;
+  cursor: pointer;
+  transition: background-color .14s ease, border-color .14s ease, transform .1s ease, color .14s ease;
 }
 
-#editor-back:hover {
+#editor-back:hover,
+#cmd-editor-back:hover,
+.editor-close-btn:hover {
   background: var(--sand-600);
+  border-color: var(--sand-700);
+}
+
+#editor-back:active,
+#cmd-editor-back:active,
+.editor-close-btn:active {
+  transform: scale(0.92);
 }
 
 #editor-body {
@@ -1784,7 +1797,7 @@ button.saved {
   margin-top: 4px;
 }
 
-/* Command Editor Header & Meta */
+/* Command Editor Header */
 .cmd-editor-head {
   display: flex;
   align-items: center;
@@ -1792,42 +1805,31 @@ button.saved {
   gap: 12px;
 }
 
-.cmd-meta-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-  min-width: 0;
-}
-
 .cmd-title-display {
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
   gap: 2px;
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 600;
-  color: var(--fg);
+  color: #14532d;
+  background: #dcfce7;
+  border: 1px solid rgba(134, 239, 172, 0.65);
+  padding: 3px 9px;
+  border-radius: 6px;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.cmd-fixed-ext {
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--muted);
+.cmd-title-display strong {
+  color: #14532d;
 }
 
-.cmd-badge-fixed {
-  font-size: 10px;
+.cmd-fixed-ext {
+  font-size: 13px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--sand-600);
-  color: var(--vast-800);
-  flex-shrink: 0;
+  color: #15803d;
 }
 
 #cmd-editor-body {

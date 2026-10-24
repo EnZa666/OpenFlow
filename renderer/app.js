@@ -351,9 +351,9 @@ function commandsHtml() {
 
   const itemsHtml = list.map((cmd) => {
     const preview = String(cmd.content || "").trim().replace(/\s+/g, " ") || "Empty script — click to edit";
-    const typeLabel = (cmd.type || "bat").toUpperCase();
+    const badgeLabel = cmd.type === "powershell" ? "ps1" : (cmd.type === "bat" ? "batch" : "cmd");
     return `<div class="note-box command-box" role="listitem">
-      <div class="command-type-pill ${esc(cmd.type)}">${esc(typeLabel)}</div>
+      <div class="command-type-pill ${esc(cmd.type)}">${esc(badgeLabel)}</div>
       <button type="button" class="note-open-btn command-open-btn" data-command-open="${esc(cmd.id)}">
         <strong>${esc(cmd.name)}<span class="command-ext-suffix">${esc(cmd.extension)}</span></strong>
         <span>${esc(preview)}</span>
@@ -504,8 +504,8 @@ function paintCommandEditor() {
   }
   editor.dataset.id = editorKey;
   editor.hidden = false;
-  const typeUpper = (cmd.type || "bat").toUpperCase();
-  editor.innerHTML = `<header class="note-bubble-head cmd-editor-head"><div class="cmd-meta-group"><span class="command-type-pill ${esc(cmd.type)}">${esc(typeUpper)}</span><div class="cmd-title-display"><strong>${esc(cmd.name)}</strong><span class="cmd-fixed-ext">${esc(cmd.extension)}</span></div><span class="cmd-badge-fixed" title="Name, type and extension are permanent">Fixed</span></div><button type="button" id="cmd-editor-back">Back</button></header><textarea id="cmd-editor-body" placeholder="Write or paste your script here..." spellcheck="false" aria-label="Script content">${esc(cmd.content || "")}</textarea><footer class="note-bubble-foot cmd-editor-foot">${cmd.id ? '<button type="button" id="cmd-editor-run" class="btn-secondary" title="Run with Administrator privileges"><svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M4.5 3.5v9l8-4.5z"></path></svg><span>Run</span></button>' : ''}<button type="button" id="cmd-editor-copy">Copy</button><button type="button" id="cmd-editor-save">Save</button></footer>`;
+  const closeIcon = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3.5" y1="3.5" x2="12.5" y2="12.5"></line><line x1="12.5" y1="3.5" x2="3.5" y2="12.5"></line></svg>';
+  editor.innerHTML = `<header class="note-bubble-head cmd-editor-head"><div class="cmd-title-display"><strong>${esc(cmd.name)}</strong><span class="cmd-fixed-ext">${esc(cmd.extension)}</span></div><button type="button" class="editor-close-btn" id="cmd-editor-back" title="Close" aria-label="Close">${closeIcon}</button></header><textarea id="cmd-editor-body" placeholder="Write or paste your script here..." spellcheck="false" aria-label="Script content">${esc(cmd.content || "")}</textarea><footer class="note-bubble-foot cmd-editor-foot">${cmd.id ? '<button type="button" id="cmd-editor-run" class="btn-secondary" title="Run with Administrator privileges"><svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M4.5 3.5v9l8-4.5z"></path></svg><span>Run</span></button>' : ''}<button type="button" id="cmd-editor-save">Save</button></footer>`;
   const body = editor.querySelector("#cmd-editor-body");
   if (body) body.focus();
 }
@@ -551,7 +551,8 @@ function paintEditor() {
   editor.dataset.id = editorKey;
   editor.hidden = false;
   const titleVal = state.editor.title || "Note";
-  editor.innerHTML = `<header class="note-bubble-head"><input id="editor-title" value="${esc(titleVal)}" placeholder="Note title" aria-label="Title"><button type="button" id="editor-back">Back</button></header><textarea id="editor-body" placeholder="Write or dictate a note..." aria-label="Note">${esc(state.editor.content || "")}</textarea><footer class="note-bubble-foot"><button type="button" id="editor-voice" class="note-voice-btn idle" title="Click to dictate" aria-label="Dictate into note" aria-pressed="false"><svg class="icon-active" width="22" height="22" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.1" stroke="#000000" stroke-width="1.8"></circle><circle cx="8" cy="8" r="2.7" fill="#000000"></circle></svg><svg class="icon-idle" width="20" height="20" viewBox="0 0 18 18" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg><span class="icon-busy note-spin"></span></button><button type="button" id="editor-copy">Copy</button><button type="button" id="editor-save">Save</button></footer>`;
+  const closeIcon = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3.5" y1="3.5" x2="12.5" y2="12.5"></line><line x1="12.5" y1="3.5" x2="3.5" y2="12.5"></line></svg>';
+  editor.innerHTML = `<header class="note-bubble-head"><input id="editor-title" value="${esc(titleVal)}" placeholder="Note title" aria-label="Title"><button type="button" class="editor-close-btn" id="editor-back" title="Close" aria-label="Close">${closeIcon}</button></header><textarea id="editor-body" placeholder="Write or dictate a note..." aria-label="Note">${esc(state.editor.content || "")}</textarea><footer class="note-bubble-foot"><button type="button" id="editor-voice" class="note-voice-btn idle" title="Click to dictate" aria-label="Dictate into note" aria-pressed="false"><svg class="icon-active" width="22" height="22" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.1" stroke="#000000" stroke-width="1.8"></circle><circle cx="8" cy="8" r="2.7" fill="#000000"></circle></svg><svg class="icon-idle" width="20" height="20" viewBox="0 0 18 18" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg><span class="icon-busy note-spin"></span></button><button type="button" id="editor-copy">Copy</button><button type="button" id="editor-save">Save</button></footer>`;
   paintEditorVoice();
   const body = editor.querySelector("#editor-body");
   if (body) body.focus();
@@ -1142,18 +1143,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (event.target.closest("#cmd-editor-back")) {
       state.commandEditor = null;
       render();
-      return;
-    }
-    const cmdCopy = event.target.closest("#cmd-editor-copy");
-    if (cmdCopy && window.openflow) {
-      const body = document.querySelector("#cmd-editor-body");
-      await window.openflow.dispatch("clipboard.copy", { text: body ? body.value : "" });
-      cmdCopy.textContent = "Copied";
-      cmdCopy.classList.add("copied");
-      setTimeout(() => {
-        cmdCopy.textContent = "Copy";
-        cmdCopy.classList.remove("copied");
-      }, 1000);
       return;
     }
     const cmdRun = event.target.closest("#cmd-editor-run");
