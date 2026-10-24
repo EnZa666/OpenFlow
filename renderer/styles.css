@@ -723,6 +723,32 @@ h1 {
   overflow: hidden;
 }
 
+.engine-normal-view,
+.engine-info-view {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+}
+
+.engine-info-view {
+  display: none;
+}
+
+.engine-option:has(.engine-info-btn:hover) .engine-normal-view,
+.engine-option:has(.engine-info-view:hover) .engine-normal-view,
+.engine-option.is-pinned .engine-normal-view {
+  display: none;
+}
+
+.engine-option:has(.engine-info-btn:hover) .engine-info-view,
+.engine-option:has(.engine-info-view:hover) .engine-info-view,
+.engine-option.is-pinned .engine-info-view {
+  display: flex;
+}
+
 .engine-option:hover {
   border-color: var(--sand-700);
 }
