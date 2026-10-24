@@ -390,7 +390,9 @@ function paintEditor() {
   }
   editor.dataset.id = editorKey;
   editor.hidden = false;
-  editor.innerHTML = `<header class="note-bubble-head"><input id="editor-title" value="${esc(state.editor.title || "Note")}" placeholder="Note title" aria-label="Title"><button type="button" id="editor-back">Back</button></header><textarea id="editor-body" placeholder="Write or dictate a note..." aria-label="Note">${esc(state.editor.content || "")}</textarea><footer class="note-bubble-foot"><button type="button" id="editor-voice" class="note-voice-btn idle" title="Click to dictate" aria-label="Dictate into note" aria-pressed="false"><svg class="icon-active" width="22" height="22" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.1" stroke="#000000" stroke-width="1.8"></circle><circle cx="8" cy="8" r="2.7" fill="#000000"></circle></svg><svg class="icon-idle" width="20" height="20" viewBox="0 0 18 18" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg><span class="icon-busy note-spin"></span></button><button type="button" id="editor-copy">Copy</button><button type="button" id="editor-save">Save</button></footer>`;
+  const titleVal = state.editor.title || "Note";
+  const titleCh = Math.max(5, Math.min(32, titleVal.length + 1));
+  editor.innerHTML = `<header class="note-bubble-head"><input id="editor-title" value="${esc(titleVal)}" placeholder="Note title" aria-label="Title" style="width: ${titleCh}ch;"><button type="button" id="editor-back">Back</button></header><textarea id="editor-body" placeholder="Write or dictate a note..." aria-label="Note">${esc(state.editor.content || "")}</textarea><footer class="note-bubble-foot"><button type="button" id="editor-voice" class="note-voice-btn idle" title="Click to dictate" aria-label="Dictate into note" aria-pressed="false"><svg class="icon-active" width="22" height="22" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.1" stroke="#000000" stroke-width="1.8"></circle><circle cx="8" cy="8" r="2.7" fill="#000000"></circle></svg><svg class="icon-idle" width="20" height="20" viewBox="0 0 18 18" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect><path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path></svg><span class="icon-busy note-spin"></span></button><button type="button" id="editor-copy">Copy</button><button type="button" id="editor-save">Save</button></footer>`;
   paintEditorVoice();
   const body = editor.querySelector("#editor-body");
   if (body) body.focus();
@@ -865,6 +867,13 @@ document.addEventListener("DOMContentLoaded", () => {
     await new Promise((resolve) => setTimeout(resolve, 260));
     state.editor = null;
     await load();
+  });
+
+  document.querySelector("#editor").addEventListener("input", (event) => {
+    if (event.target && event.target.id === "editor-title") {
+      const len = event.target.value.length || 4;
+      event.target.style.width = Math.max(5, Math.min(32, len + 1)) + "ch";
+    }
   });
 
   document.querySelector("#editor").addEventListener("keydown", (event) => {

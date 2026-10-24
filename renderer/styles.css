@@ -713,7 +713,8 @@ h1 {
   border: 1.5px solid var(--line);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 6px;
   height: 98px;
   box-sizing: border-box;
   transition: border-color .14s ease, background-color .14s ease, box-shadow .14s ease;
@@ -938,8 +939,10 @@ label.key input:focus, .onboard-input:focus {
 }
 
 #editor-title {
-  flex: 1;
-  min-width: 0;
+  field-sizing: content;
+  width: auto;
+  max-width: calc(100% - 90px);
+  min-width: 48px;
   border: 0;
   background: transparent;
   border-radius: 8px;

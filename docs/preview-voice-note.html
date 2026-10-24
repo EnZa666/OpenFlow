@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    :root {
+      --sand-50: #fcfcfb;
+      --sand-500: #f5f4f0;
+      --sand-600: #eeebe3;
+      --vast-600: #71716e;
+      --vast-950: #1a1a1a;
+      --green-600: #059669;
+      --green-50: #ecfdf5;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      background: var(--sand-500);
+      color: var(--vast-950);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+    body {
+      width: 1100px;
+      height: 280px;
+      padding: 24px 36px;
+      display: grid;
+      grid-template-columns: 430px 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+    .visual-card {
+      background: var(--sand-50);
+      border: 1px solid var(--sand-600);
+      border-radius: 18px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 20px;
+    }
+    .tooltip-row {
+      display: flex;
+      gap: 12px;
+    }
+    .tip {
+      background: #000000;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.02em;
+    }
+    .combo-pill {
+      display: inline-flex;
+      align-items: center;
+      height: 48px;
+      padding: 4px 10px;
+      background: #000000;
+      color: #ffffff;
+      border-radius: 999px;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+    }
+    .combo-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #ffffff;
+    }
+    .combo-btn.active {
+      background: #1f1f1f;
+    }
+    .combo-divider {
+      width: 1px;
+      height: 18px;
+      background: #2f2f2f;
+    }
+    .content-side {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+      padding-right: 20px;
+    }
+    .new-badge {
+      display: inline-flex;
+      align-self: flex-start;
+      background: #1a1a1a;
+      color: #ffffff;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+    h1 {
+      margin: 0;
+      font-family: Georgia, serif;
+      font-size: 27px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+      color: var(--vast-950);
+    }
+    .desc {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--vast-600);
+    }
+  </style>
+</head>
+<body>
+  <div class="visual-card">
+    <div class="tooltip-row">
+      <span class="tip">take voice note</span>
+      <span class="tip">microphone</span>
+    </div>
+    <div class="combo-pill">
+      <div class="combo-btn active" title="Take Voice Note">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="6.1" stroke="#ffffff" stroke-width="1.7"></circle>
+          <circle cx="8" cy="8" r="2.7" fill="#ffffff"></circle>
+        </svg>
+      </div>
+      <div class="combo-divider"></div>
+      <div class="combo-btn" title="Microphone">
+        <svg width="20" height="20" viewBox="0 0 18 18" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6.25" y="1.75" width="5.5" height="9" rx="2.75"></rect>
+          <path d="M3.75 8.25a5.25 5.25 0 0 0 10.5 0M9 13.5V16"></path>
+        </svg>
+      </div>
+    </div>
+  </div>
+  <div class="content-side">
+    <span class="new-badge">New Feature</span>
+    <h1>Take Voice Note &mdash; Direct to Notepad</h1>
+    <p class="desc">Click the voice note button right next to the mic to dictate thoughts directly into a new saved note without pasting into the active window. You can keep it attached or remove it anytime in Settings.</p>
+  </div>
+</body>
+</html>
