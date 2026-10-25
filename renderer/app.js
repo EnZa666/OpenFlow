@@ -352,13 +352,14 @@ function commandsHtml() {
   const itemsHtml = list.map((cmd) => {
     const preview = String(cmd.content || "").trim().replace(/\s+/g, " ") || "Empty script — click to edit";
     const badgeLabel = cmd.type === "powershell" ? "ps1" : (cmd.type === "bat" ? "batch" : "cmd");
+    const runTitle = cmd.runAsAdmin ? "Run with Administrator privileges" : "Run command";
     return `<div class="note-box command-box" role="listitem">
       <div class="command-type-pill ${esc(cmd.type)}">${esc(badgeLabel)}</div>
       <button type="button" class="note-open-btn command-open-btn" data-command-open="${esc(cmd.id)}">
         <strong>${esc(cmd.name)}<span class="command-ext-suffix">${esc(cmd.extension)}</span></strong>
         <span>${esc(preview)}</span>
       </button>
-      <button type="button" class="command-run-btn" data-command-run="${esc(cmd.id)}" title="Run with Administrator privileges" aria-label="Run command">${playSvg}</button>
+      <button type="button" class="command-run-btn" data-command-run="${esc(cmd.id)}" title="${runTitle}" aria-label="${runTitle}">${playSvg}</button>
       <button type="button" class="note-delete-btn" data-command-delete="${esc(cmd.id)}" title="Delete command" aria-label="Delete command">${trashSvg}</button>
     </div>`;
   }).join("");
@@ -505,7 +506,10 @@ function paintCommandEditor() {
   editor.dataset.id = editorKey;
   editor.hidden = false;
   const closeIcon = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3.5" y1="3.5" x2="12.5" y2="12.5"></line><line x1="12.5" y1="3.5" x2="3.5" y2="12.5"></line></svg>';
-  editor.innerHTML = `<header class="note-bubble-head cmd-editor-head"><div class="cmd-title-display"><strong>${esc(cmd.name)}</strong><span class="cmd-fixed-ext">${esc(cmd.extension)}</span></div><button type="button" class="editor-close-btn" id="cmd-editor-back" title="Close" aria-label="Close">${closeIcon}</button></header><textarea id="cmd-editor-body" placeholder="Write or paste your script here..." spellcheck="false" aria-label="Script content">${esc(cmd.content || "")}</textarea><footer class="note-bubble-foot cmd-editor-foot">${cmd.id ? '<button type="button" id="cmd-editor-run" class="btn-secondary" title="Run with Administrator privileges"><svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M4.5 3.5v9l8-4.5z"></path></svg><span>Run</span></button>' : ''}<button type="button" id="cmd-editor-save">Save</button></footer>`;
+  const runAsAdmin = Boolean(cmd.runAsAdmin);
+  const runTitle = runAsAdmin ? "Run with Administrator privileges" : "Run command";
+  const toggleChecked = runAsAdmin ? "true" : "false";
+  editor.innerHTML = `<header class="note-bubble-head cmd-editor-head"><div class="cmd-title-display"><strong>${esc(cmd.name)}</strong><span class="cmd-fixed-ext">${esc(cmd.extension)}</span></div><button type="button" class="editor-close-btn" id="cmd-editor-back" title="Close" aria-label="Close">${closeIcon}</button></header><textarea id="cmd-editor-body" placeholder="Write or paste your script here..." spellcheck="false" aria-label="Script content">${esc(cmd.content || "")}</textarea><footer class="note-bubble-foot cmd-editor-foot"><label class="cmd-admin-toggle" id="cmd-admin-toggle-label" title="Run as administrator"><button type="button" class="switch-btn" role="switch" id="cmd-editor-admin-toggle" aria-checked="${toggleChecked}" aria-label="Run as administrator"><span class="switch-thumb"></span></button><span class="cmd-admin-label">Run as administrator</span></label><div class="cmd-editor-actions">${cmd.id ? `<button type="button" id="cmd-editor-run" class="btn-secondary" title="${runTitle}"><svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M4.5 3.5v9l8-4.5z"></path></svg><span>Run</span></button>` : ''}<button type="button" id="cmd-editor-save">Save</button></div></footer>`;
   const body = editor.querySelector("#cmd-editor-body");
   if (body) body.focus();
 }
@@ -834,7 +838,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (openCmd) {
       const cmd = ((state.desk && state.desk.commands) || []).find((c) => c.id === openCmd.dataset.commandOpen);
       if (cmd) {
-        state.commandEditor = { id: cmd.id, isNew: false, name: cmd.name, type: cmd.type, extension: cmd.extension, content: cmd.content };
+        state.commandEditor = {
+          id: cmd.id,
+          isNew: false,
+          name: cmd.name,
+          type: cmd.type,
+          extension: cmd.extension,
+          content: cmd.content,
+          runAsAdmin: Boolean(cmd.runAsAdmin),
+        };
         render();
       }
       return;
@@ -1112,6 +1124,7 @@ document.addEventListener("DOMContentLoaded", () => {
           type: typeInfo.id,
           extension: typeInfo.extension,
           content: "",
+          runAsAdmin: false,
         };
         render();
       }
@@ -1145,6 +1158,21 @@ document.addEventListener("DOMContentLoaded", () => {
       render();
       return;
     }
+    const adminToggle = event.target.closest("#cmd-editor-admin-toggle, #cmd-admin-toggle-label");
+    if (adminToggle && state.commandEditor) {
+      state.commandEditor.runAsAdmin = !state.commandEditor.runAsAdmin;
+      const toggleBtn = document.querySelector("#cmd-editor-admin-toggle");
+      if (toggleBtn) {
+        toggleBtn.setAttribute("aria-checked", state.commandEditor.runAsAdmin ? "true" : "false");
+      }
+      const runBtn = document.querySelector("#cmd-editor-run");
+      if (runBtn) {
+        const nextTitle = state.commandEditor.runAsAdmin ? "Run with Administrator privileges" : "Run command";
+        runBtn.setAttribute("title", nextTitle);
+        runBtn.setAttribute("aria-label", nextTitle);
+      }
+      return;
+    }
     const cmdRun = event.target.closest("#cmd-editor-run");
     if (cmdRun && window.openflow && state.commandEditor) {
       cmdRun.disabled = true;
@@ -1159,12 +1187,17 @@ document.addEventListener("DOMContentLoaded", () => {
           name: state.commandEditor.name,
           type: state.commandEditor.type,
           content,
+          runAsAdmin: Boolean(state.commandEditor.runAsAdmin),
         });
         cmdId = saved.id;
         state.commandEditor.id = saved.id;
         state.commandEditor.isNew = false;
       } else {
-        await window.openflow.dispatch("commands.save", { id: cmdId, content });
+        await window.openflow.dispatch("commands.save", {
+          id: cmdId,
+          content,
+          runAsAdmin: Boolean(state.commandEditor.runAsAdmin),
+        });
       }
       const res = await window.openflow.dispatch("commands.run", { id: cmdId });
       cmdRun.disabled = false;
@@ -1188,11 +1221,13 @@ document.addEventListener("DOMContentLoaded", () => {
           name: state.commandEditor.name,
           type: state.commandEditor.type,
           content,
+          runAsAdmin: Boolean(state.commandEditor.runAsAdmin),
         });
       } else {
         await window.openflow.dispatch("commands.save", {
           id: state.commandEditor.id,
           content,
+          runAsAdmin: Boolean(state.commandEditor.runAsAdmin),
         });
       }
       await new Promise((resolve) => setTimeout(resolve, 260));

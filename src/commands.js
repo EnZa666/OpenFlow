@@ -76,7 +76,11 @@ function removeScript(dir, command) {
 const LAUNCHER = [
   "$ErrorActionPreference = 'Stop'",
   "try {",
-  "  Start-Process -FilePath $env:OPENFLOW_CMD_EXE -ArgumentList $env:OPENFLOW_CMD_ARGS -Verb RunAs -WorkingDirectory $env:OPENFLOW_CMD_DIR",
+  "  if ($env:OPENFLOW_CMD_RUNAS -eq '1') {",
+  "    Start-Process -FilePath $env:OPENFLOW_CMD_EXE -ArgumentList $env:OPENFLOW_CMD_ARGS -Verb RunAs -WorkingDirectory $env:OPENFLOW_CMD_DIR",
+  "  } else {",
+  "    Start-Process -FilePath $env:OPENFLOW_CMD_EXE -ArgumentList $env:OPENFLOW_CMD_ARGS -WorkingDirectory $env:OPENFLOW_CMD_DIR",
+  "  }",
   "} catch {",
   "  if ($_.Exception.NativeErrorCode -eq 1223 -or $_.Exception.Message -match 'canceled by the user|abgebrochen') { exit 1223 }",
   "  [Console]::Error.WriteLine($_.Exception.Message)",
@@ -112,19 +116,26 @@ function run(dir, command, options) {
       return;
     }
     const spec = launchSpec(command, file);
+    const runAsAdmin = Boolean(command && command.runAsAdmin);
     exec(
       "powershell.exe",
       ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", LAUNCHER],
       {
         windowsHide: true,
-        env: { ...process.env, OPENFLOW_CMD_EXE: spec.exe, OPENFLOW_CMD_ARGS: spec.args, OPENFLOW_CMD_DIR: spec.dir },
+        env: {
+          ...process.env,
+          OPENFLOW_CMD_EXE: spec.exe,
+          OPENFLOW_CMD_ARGS: spec.args,
+          OPENFLOW_CMD_DIR: spec.dir,
+          OPENFLOW_CMD_RUNAS: runAsAdmin ? "1" : "0",
+        },
       },
       (error, _stdout, stderr) => {
         if (!error) {
           resolve({ ok: true });
           return;
         }
-        if (error.code === 1223) {
+        if (runAsAdmin && error.code === 1223) {
           resolve({ ok: false, code: "denied", error: `Administrator permission was declined, "${command.name}" was not run.` });
           return;
         }
@@ -135,4 +146,4 @@ function run(dir, command, options) {
   });
 }
 
-module.exports = { TYPES, MAX_NAME, MAX_CONTENT, validateName, typeOf, scriptPath, writeScript, removeScript, launchSpec, run, normalizeContent };
+module.exports = { TYPES, MAX_NAME, MAX_CONTENT, LAUNCHER, validateName, typeOf, scriptPath, writeScript, removeScript, launchSpec, run, normalizeContent };
