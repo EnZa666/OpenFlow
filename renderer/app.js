@@ -532,8 +532,7 @@ function paintCommandEditor() {
     return;
   }
   const cmd = state.commandEditor;
-  const iconId = cmd.icon || "terminal";
-  const editorKey = `cmd_${cmd.id || "__new__"}_${iconId}`;
+  const editorKey = `cmd_${cmd.id || "__new__"}`;
   if (editor.dataset.id === editorKey && editor.querySelector("#cmd-editor-body")) {
     editor.hidden = false;
     return;
@@ -544,7 +543,7 @@ function paintCommandEditor() {
   const runAsAdmin = Boolean(cmd.runAsAdmin);
   const runTitle = runAsAdmin ? "Run with Administrator privileges" : "Run command";
   const toggleChecked = runAsAdmin ? "true" : "false";
-  editor.innerHTML = `<header class="note-bubble-head cmd-editor-head"><div class="cmd-title-display"><button type="button" class="command-symbol-btn cmd-editor-symbol-btn" id="cmd-editor-symbol-btn" title="Change symbol (${esc(iconId)})" aria-label="Change command symbol">${getCommandSvg(iconId, 16, 16)}</button><strong>${esc(cmd.name)}</strong><span class="cmd-fixed-ext">${esc(cmd.extension)}</span></div><button type="button" class="editor-close-btn" id="cmd-editor-back" title="Close" aria-label="Close">${closeIcon}</button></header><textarea id="cmd-editor-body" placeholder="Write or paste your script here..." spellcheck="false" aria-label="Script content">${esc(cmd.content || "")}</textarea><footer class="note-bubble-foot cmd-editor-foot"><label class="cmd-admin-toggle" id="cmd-admin-toggle-label" title="Run as administrator"><button type="button" class="switch-btn" role="switch" id="cmd-editor-admin-toggle" aria-checked="${toggleChecked}" aria-label="Run as administrator"><span class="switch-thumb"></span></button><span class="cmd-admin-label">Run as administrator</span></label><div class="cmd-editor-actions">${cmd.id ? `<button type="button" id="cmd-editor-run" class="btn-secondary" title="${runTitle}"><svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M4.5 3.5v9l8-4.5z"></path></svg><span>Run</span></button>` : ''}<button type="button" id="cmd-editor-save">Save</button></div></footer>`;
+  editor.innerHTML = `<header class="note-bubble-head cmd-editor-head"><div class="cmd-title-display"><strong>${esc(cmd.name)}</strong><span class="cmd-fixed-ext">${esc(cmd.extension)}</span></div><button type="button" class="editor-close-btn" id="cmd-editor-back" title="Close" aria-label="Close">${closeIcon}</button></header><textarea id="cmd-editor-body" placeholder="Write or paste your script here..." spellcheck="false" aria-label="Script content">${esc(cmd.content || "")}</textarea><footer class="note-bubble-foot cmd-editor-foot"><label class="cmd-admin-toggle" id="cmd-admin-toggle-label" title="Run as administrator"><button type="button" class="switch-btn" role="switch" id="cmd-editor-admin-toggle" aria-checked="${toggleChecked}" aria-label="Run as administrator"><span class="switch-thumb"></span></button><span class="cmd-admin-label">Run as administrator</span></label><div class="cmd-editor-actions">${cmd.id ? `<button type="button" id="cmd-editor-run" class="btn-secondary" title="${runTitle}"><svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M4.5 3.5v9l8-4.5z"></path></svg><span>Run</span></button>` : ''}<button type="button" id="cmd-editor-save">Save</button></div></footer>`;
   const body = editor.querySelector("#cmd-editor-body");
   if (body) body.focus();
 }
@@ -569,21 +568,20 @@ function paintCommandWizard() {
     const currentIcon = wizard.icon || "terminal";
     const iconsHtml = COMMAND_ICONS.map((icon) => {
       const isSelected = icon.id === currentIcon;
-      return `<button type="button" class="cmd-icon-option${isSelected ? " selected" : ""}" role="radio" aria-checked="${isSelected ? "true" : "false"}" data-cmd-wizard-icon="${esc(icon.id)}" title="${esc(icon.label)}">
-        <div class="cmd-icon-bubble-preview">${getCommandSvg(icon.id, 18, 18)}</div>
-        <span class="cmd-icon-label">${esc(icon.label)}</span>
+      return `<button type="button" class="cmd-icon-btn-compact${isSelected ? " selected" : ""}" role="radio" aria-checked="${isSelected ? "true" : "false"}" data-cmd-wizard-icon="${esc(icon.id)}" aria-label="${esc(icon.id)}">
+        <div class="cmd-icon-bubble-preview">${getCommandSvg(icon.id, 16, 16)}</div>
       </button>`;
     }).join("");
 
-    host.innerHTML = `<div class="onboarding-card" role="dialog" aria-modal="true" style="max-width: 580px;">
+    host.innerHTML = `<div class="onboarding-card" role="dialog" aria-modal="true" style="max-width: 320px; padding: 16px 18px;">
       <div>
         <h2>Choose a Symbol</h2>
         <p class="sub">Step 3 of 3: Select an icon for <strong>${esc(wizard.name)}${esc(typeInfo.extension)}</strong>.</p>
       </div>
-      <div class="cmd-icon-picker-grid" role="radiogroup" aria-label="Command Symbol Collection">
+      <div class="cmd-icon-picker-grid-compact" role="radiogroup" aria-label="Command Symbol Collection">
         ${iconsHtml}
       </div>
-      <div class="onboarding-actions" style="margin-top: 4px;">
+      <div class="onboarding-actions" style="margin-top: 6px;">
         <button type="button" class="btn-secondary" data-cmd-wizard-back>Back</button>
         <button type="button" class="btn-primary" data-cmd-wizard-finish>Continue</button>
       </div>
@@ -612,25 +610,21 @@ function paintIconPicker() {
   const closeIcon = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3.5" y1="3.5" x2="12.5" y2="12.5"></line><line x1="12.5" y1="3.5" x2="3.5" y2="12.5"></line></svg>';
   const iconsHtml = COMMAND_ICONS.map((icon) => {
     const isSelected = icon.id === currentIcon;
-    return `<button type="button" class="cmd-icon-option${isSelected ? " selected" : ""}" role="radio" aria-checked="${isSelected ? "true" : "false"}" data-cmd-icon-choice="${esc(icon.id)}" title="${esc(icon.label)}">
-      <div class="cmd-icon-bubble-preview">${getCommandSvg(icon.id, 18, 18)}</div>
-      <span class="cmd-icon-label">${esc(icon.label)}</span>
+    return `<button type="button" class="cmd-icon-btn-compact${isSelected ? " selected" : ""}" role="radio" aria-checked="${isSelected ? "true" : "false"}" data-cmd-icon-choice="${esc(icon.id)}" aria-label="${esc(icon.id)}">
+      <div class="cmd-icon-bubble-preview">${getCommandSvg(icon.id, 16, 16)}</div>
     </button>`;
   }).join("");
 
-  host.innerHTML = `<div class="onboarding-card" role="dialog" aria-modal="true" style="max-width: 540px;">
-    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
-      <div>
-        <h2>Change Symbol</h2>
-        <p class="sub">Choose a symbol for <strong>${esc(state.iconPicker.name || "Command")}</strong></p>
+  host.innerHTML = `<div class="cmd-icon-picker-card" role="dialog" aria-modal="true">
+    <div class="cmd-icon-picker-head">
+      <div class="cmd-icon-picker-title">
+        <h3>Change Symbol</h3>
+        <p class="sub">${esc(state.iconPicker.name || "Command")}</p>
       </div>
       <button type="button" class="editor-close-btn" data-icon-picker-close title="Close" aria-label="Close">${closeIcon}</button>
     </div>
-    <div class="cmd-icon-picker-grid" role="radiogroup" aria-label="Command Symbol Collection">
+    <div class="cmd-icon-picker-grid-compact" role="radiogroup" aria-label="Command Symbol Collection">
       ${iconsHtml}
-    </div>
-    <div class="onboarding-actions" style="margin-top: 4px;">
-      <button type="button" class="btn-secondary" data-icon-picker-close>Cancel</button>
     </div>
   </div>`;
 }
@@ -1313,16 +1307,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelector("#editor").addEventListener("click", async (event) => {
     if (event.target.closest("#cmd-editor-back")) {
       state.commandEditor = null;
-      render();
-      return;
-    }
-    if (event.target.closest("#cmd-editor-symbol-btn") && state.commandEditor) {
-      state.iconPicker = {
-        commandId: state.commandEditor.id,
-        currentIcon: state.commandEditor.icon || "terminal",
-        name: state.commandEditor.name,
-        isEditor: true,
-      };
       render();
       return;
     }

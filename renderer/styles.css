@@ -1685,19 +1685,6 @@ button.saved {
   display: block;
 }
 
-.cmd-editor-symbol-btn {
-  width: 24px;
-  height: 24px;
-  margin-right: 6px;
-  background: #15803d;
-  border: none;
-}
-
-.cmd-editor-symbol-btn:hover {
-  background: #166534;
-  transform: scale(1.08);
-}
-
 .cmd-icon-picker-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -1934,25 +1921,26 @@ button.saved {
   gap: 2px;
   font-size: 14.5px;
   font-weight: 600;
-  color: #14532d;
-  background: #dcfce7;
-  border: 1px solid rgba(134, 239, 172, 0.65);
-  padding: 3px 9px;
-  border-radius: 6px;
-  line-height: 1.3;
+  color: #000000;
+  background: #86efac;
+  border: 0;
+  padding: 3px 8px;
+  border-radius: 0;
+  line-height: 1.35;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .cmd-title-display strong {
-  color: #14532d;
+  color: #000000;
+  font-weight: 600;
 }
 
 .cmd-fixed-ext {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
-  color: #15803d;
+  color: #000000;
 }
 
 #cmd-editor-body {
@@ -1972,6 +1960,32 @@ button.saved {
   overflow-wrap: normal;
   overflow-x: auto;
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sand-700) transparent;
+}
+
+#cmd-editor-body::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+#cmd-editor-body::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 4px 8px;
+}
+
+#cmd-editor-body::-webkit-scrollbar-thumb {
+  background: var(--sand-700);
+  border-radius: 999px;
+  transition: background-color .15s ease;
+}
+
+#cmd-editor-body::-webkit-scrollbar-thumb:hover {
+  background: #a8a29e;
+}
+
+#cmd-editor-body::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 .cmd-editor-foot {
@@ -2041,4 +2055,107 @@ button.saved {
 #cmd-editor-run:hover {
   background: var(--sand-600);
   border-color: var(--sand-700);
+}
+
+
+.cmd-icon-picker-card {
+  width: 100%;
+  max-width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  padding: 14px 16px 14px;
+  display: grid;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+.cmd-icon-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cmd-icon-picker-title h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+}
+
+.cmd-icon-picker-title p.sub {
+  margin: 1px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmd-icon-picker-grid-compact {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  overflow: visible;
+  padding: 0;
+}
+
+.cmd-icon-btn-compact {
+  width: 100%;
+  height: 42px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1.5px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: border-color .14s ease, background-color .14s ease, transform .14s ease, box-shadow .14s ease;
+}
+
+.cmd-icon-btn-compact:hover {
+  background: var(--surface);
+  border-color: var(--sand-600);
+  transform: translateY(-1.5px);
+}
+
+.cmd-icon-btn-compact.selected,
+.cmd-icon-btn-compact[aria-checked="true"] {
+  border-color: var(--fg);
+  background: var(--surface);
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.14);
+}
+
+.cmd-icon-btn-compact .cmd-icon-bubble-preview {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #111111;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .14s ease, background-color .14s ease;
+}
+
+.cmd-icon-btn-compact .cmd-icon-bubble-preview svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+.cmd-icon-btn-compact:hover .cmd-icon-bubble-preview {
+  background: #000000;
+  transform: scale(1.08);
+}
+
+.cmd-icon-btn-compact.selected .cmd-icon-bubble-preview,
+.cmd-icon-btn-compact[aria-checked="true"] .cmd-icon-bubble-preview {
+  background: #000000;
+  box-shadow: 0 0 0 1.5px var(--fg);
 }
