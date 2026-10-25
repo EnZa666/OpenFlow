@@ -13,9 +13,7 @@ const audio = require("../src/audio");
 const parakeet = require("../src/parakeet");
 const commands = require("../src/commands");
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
-app.commandLine.appendSwitch("ignore-certificate-errors");
 
 let mainWindow = null;
 let overlayWindow = null;
@@ -552,7 +550,9 @@ function ensureCommandsScripts() {
         commands.writeScript(dir, cmd);
       }
     }
-  } catch {}
+  } catch (error) {
+    console.error("ensureCommandsScripts failed:", error);
+  }
 }
 
 function publicSettings() {
@@ -1386,8 +1386,6 @@ const actions = {
     const raw = String(payload.text || "").trim();
     if (!raw) throw new Error("No text.");
     const prepared = flow.prepareTranscript(raw, library());
-
-    if (typeof session !== "undefined" && session.voice && prepared.text) sendNoteVoice({ type: "final", text: prepared.text });
     return commitTranscript(raw, prepared, {
       appName: payload.appName,
       url: payload.url,
@@ -1517,6 +1515,8 @@ const actions = {
       properties: ["openFile"],
     });
     if (choice.canceled || !choice.filePaths[0]) return { canceled: true };
+    const importStat = fs.statSync(choice.filePaths[0]);
+    if (importStat.size > 50 * 1024 * 1024) throw new Error("Import file is too large (max 50 MB).");
     const parsed = JSON.parse(fs.readFileSync(choice.filePaths[0], "utf8"));
     if (parsed && parsed.settings) delete parsed.settings.apiKey;
     if (parsed) delete parsed.apiKey;

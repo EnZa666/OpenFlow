@@ -202,6 +202,11 @@ async function ensureModelFiles(userDataPath, onProgress) {
         report(fileDownloaded, file.name);
       }
     });
+    const downloadedSize = fs.statSync(full).size;
+    if (downloadedSize < file.minBytes) {
+      fs.unlinkSync(full);
+      throw new Error(`Downloaded ${file.name} appears truncated (${downloadedSize} bytes).`);
+    }
     completedBytes += file.expectedBytes;
     report(0, file.name);
   }

@@ -59,8 +59,12 @@ function createStore(filePath) {
   const memory = filePath === ":memory:";
   let data = blank();
   if (!memory && filePath && fs.existsSync(filePath)) {
-    const parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
-    data = { ...blank(), ...parsed, settings: { ...blank().settings, ...(parsed.settings || {}) } };
+    try {
+      const parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
+      data = { ...blank(), ...parsed, settings: { ...blank().settings, ...(parsed.settings || {}) } };
+    } catch {
+      // Corrupt or truncated file — start from blank rather than crashing.
+    }
   }
 
   function save() {
