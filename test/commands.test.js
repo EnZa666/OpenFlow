@@ -107,6 +107,7 @@ test("store manages commands and synchronizes bubbleElements on delete", () => {
   assert.equal(c1.type, "powershell");
   assert.equal(c1.extension, ".ps1");
   assert.equal(c1.content, "Restart-NetAdapter *");
+  assert.equal(c1.runAsAdmin, false);
   assert.ok(c1.created_at);
   assert.ok(c1.modified_at);
 
@@ -117,15 +118,26 @@ test("store manages commands and synchronizes bubbleElements on delete", () => {
   store.updateSettings({ bubbleElements: ["voice", `cmd:${c1.id}`, "note"] });
   assert.deepEqual(store.getSettings().bubbleElements, ["voice", `cmd:${c1.id}`, "note"]);
 
-  // Save command updates only content and modified_at
-  const updated = store.saveCommand({ id: c1.id, content: "Restart-NetAdapter -Name 'Wi-Fi'" });
+  // Save command updates content, modified_at, and runAsAdmin flag
+  const updated = store.saveCommand({ id: c1.id, content: "Restart-NetAdapter -Name 'Wi-Fi'", runAsAdmin: true });
   assert.equal(updated.content, "Restart-NetAdapter -Name 'Wi-Fi'");
   assert.equal(updated.name, "Restart Network");
   assert.equal(updated.type, "powershell");
+  assert.equal(updated.runAsAdmin, true);
+
+  // Listing commands preserves runAsAdmin
+  const list = store.listCommands();
+  assert.equal(list.length, 1);
+  assert.equal(list[0].runAsAdmin, true);
+
+  // createCommand with explicit runAsAdmin: true
+  const c2 = store.createCommand({ name: "Admin Task", type: "bat", content: "@echo off", runAsAdmin: true });
+  assert.equal(c2.runAsAdmin, true);
 
   // Deleting command removes it from store AND strips cmd:<id> from bubbleElements
   const removed = store.deleteCommand(c1.id);
   assert.equal(removed.id, c1.id);
+  store.deleteCommand(c2.id);
   assert.equal(store.listCommands().length, 0);
   assert.deepEqual(store.getSettings().bubbleElements, ["voice", "note"]);
 });
@@ -136,19 +148,38 @@ test("run execution handles success, missing script, and user cancellation (UAC 
     const cmd = { name: "PingTest", type: "bat", extension: ".bat", content: "@echo off\nping 127.0.0.1" };
     commands.writeScript(dir, cmd);
 
-    // Success simulation
-    const mockSuccessExec = (_exe, _args, _opts, callback) => callback(null, "", "");
+    // Success simulation (non-admin by default, OPENFLOW_CMD_RUNAS is "0")
+    let capturedEnv = null;
+    const mockSuccessExec = (_exe, _args, opts, callback) => {
+      capturedEnv = opts.env;
+      callback(null, "", "");
+    };
     const resSuccess = await commands.run(dir, cmd, { execFile: mockSuccessExec });
     assert.equal(resSuccess.ok, true);
+    assert.equal(capturedEnv.OPENFLOW_CMD_RUNAS, "0");
 
-    // UAC denied simulation (code 1223)
+    // Non-admin run with 1223 error is treated as generic failure (not UAC denied)
     const errDenied = new Error("Command failed");
     errDenied.code = 1223;
     const mockDeniedExec = (_exe, _args, _opts, callback) => callback(errDenied, "", "");
-    const resDenied = await commands.run(dir, cmd, { execFile: mockDeniedExec });
-    assert.equal(resDenied.ok, false);
-    assert.equal(resDenied.code, "denied");
-    assert.match(resDenied.error, /declined|permission/i);
+    const resNonAdminDenied = await commands.run(dir, cmd, { execFile: mockDeniedExec });
+    assert.equal(resNonAdminDenied.ok, false);
+    assert.equal(resNonAdminDenied.code, "failed");
+
+    // Admin run (runAsAdmin: true) passes OPENFLOW_CMD_RUNAS="1" and treats 1223 as UAC "denied"
+    const adminCmd = { ...cmd, runAsAdmin: true };
+    const mockAdminSuccessExec = (_exe, _args, opts, callback) => {
+      capturedEnv = opts.env;
+      callback(null, "", "");
+    };
+    const resAdminSuccess = await commands.run(dir, adminCmd, { execFile: mockAdminSuccessExec });
+    assert.equal(resAdminSuccess.ok, true);
+    assert.equal(capturedEnv.OPENFLOW_CMD_RUNAS, "1");
+
+    const resAdminDenied = await commands.run(dir, adminCmd, { execFile: mockDeniedExec });
+    assert.equal(resAdminDenied.ok, false);
+    assert.equal(resAdminDenied.code, "denied");
+    assert.match(resAdminDenied.error, /declined|permission/i);
 
     // Missing file
     commands.removeScript(dir, cmd);
@@ -157,5 +188,23 @@ test("run execution handles success, missing script, and user cancellation (UAC 
     assert.equal(resMissing.code, "missing");
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("existing commands without runAsAdmin count as false", () => {
+  const tmp = path.join(os.tmpdir(), `of-legacy-${Date.now()}.json`);
+  try {
+    fs.writeFileSync(tmp, JSON.stringify({
+      commands: [
+        { id: "legacy-1", name: "Old Script", type: "bat", extension: ".bat", content: "@echo off", created_at: "2026-01-01T00:00:00.000Z", modified_at: "2026-01-01T00:00:00.000Z" }
+      ]
+    }), "utf8");
+    const store = createStore(tmp);
+    const cmd = store.getCommand("legacy-1");
+    assert.equal(cmd.runAsAdmin, false);
+    const list = store.listCommands();
+    assert.equal(list[0].runAsAdmin, false);
+  } finally {
+    try { fs.unlinkSync(tmp); } catch {}
   }
 });

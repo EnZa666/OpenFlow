@@ -1854,7 +1854,48 @@ button.saved {
 .cmd-editor-foot {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cmd-admin-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cmd-admin-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--muted);
+  transition: color .14s ease;
+}
+
+.cmd-admin-toggle:hover .cmd-admin-label {
+  color: var(--fg);
+}
+
+.cmd-admin-toggle .switch-btn {
+  width: 38px;
+  height: 22px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.cmd-admin-toggle .switch-thumb {
+  width: 16px;
+  height: 16px;
+}
+
+.cmd-admin-toggle .switch-btn[aria-checked="true"] .switch-thumb {
+  transform: translateX(16px);
+}
+
+.cmd-editor-actions {
+  display: inline-flex;
+  align-items: center;
   gap: 10px;
 }
 
