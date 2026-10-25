@@ -435,11 +435,11 @@ function createStore(filePath) {
       return data.commands
         .filter((row) => queryMatch(`${row.name}${row.extension} ${row.content}`, query))
         .sort((a, b) => b.modified_at.localeCompare(a.modified_at))
-        .map((row) => ({ ...row, runAsAdmin: Boolean(row.runAsAdmin) }));
+        .map((row) => ({ ...row, runAsAdmin: Boolean(row.runAsAdmin), icon: commands.normalizeIcon(row.icon) }));
     },
     getCommand(commandId) {
       const row = data.commands.find((item) => item.id === commandId);
-      return row ? { ...row, runAsAdmin: Boolean(row.runAsAdmin) } : null;
+      return row ? { ...row, runAsAdmin: Boolean(row.runAsAdmin), icon: commands.normalizeIcon(row.icon) } : null;
     },
     createCommand(input) {
       const type = commands.typeOf(input.type);
@@ -451,12 +451,13 @@ function createStore(filePath) {
       if (content.length > commands.MAX_CONTENT) throw new Error("The script is too large.");
       const stamp = now();
       const runAsAdmin = Boolean(input && input.runAsAdmin);
-      const row = { id: id(), name, type: type.id, extension: type.extension, content, runAsAdmin, created_at: stamp, modified_at: stamp };
+      const icon = commands.normalizeIcon(input && input.icon);
+      const row = { id: id(), name, type: type.id, extension: type.extension, content, runAsAdmin, icon, created_at: stamp, modified_at: stamp };
       data.commands.push(row);
       save();
       return { ...row };
     },
-    // Only the script text and runAsAdmin flag can change; name, type and extension stay fixed.
+    // Only the script text, runAsAdmin flag and icon can change; name, type and extension stay fixed.
     saveCommand(input) {
       const row = data.commands.find((item) => item.id === input.id);
       if (!row) throw new Error("Command missing.");
@@ -466,9 +467,12 @@ function createStore(filePath) {
       if (input && input.runAsAdmin !== undefined) {
         row.runAsAdmin = Boolean(input.runAsAdmin);
       }
+      if (input && input.icon !== undefined) {
+        row.icon = commands.normalizeIcon(input.icon);
+      }
       row.modified_at = now();
       save();
-      return { ...row, runAsAdmin: Boolean(row.runAsAdmin) };
+      return { ...row, runAsAdmin: Boolean(row.runAsAdmin), icon: commands.normalizeIcon(row.icon) };
     },
     deleteCommand(commandId) {
       const row = data.commands.find((item) => item.id === commandId);
@@ -477,7 +481,7 @@ function createStore(filePath) {
         data.settings.bubbleElements = data.settings.bubbleElements.filter((item) => item !== `cmd:${commandId}`);
       }
       save();
-      return row ? { ...row, runAsAdmin: Boolean(row.runAsAdmin) } : null;
+      return row ? { ...row, runAsAdmin: Boolean(row.runAsAdmin), icon: commands.normalizeIcon(row.icon) } : null;
     },
     getScratchpad() {
       return data.scratchpad || "";

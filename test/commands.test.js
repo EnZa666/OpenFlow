@@ -208,3 +208,28 @@ test("existing commands without runAsAdmin count as false", () => {
     try { fs.unlinkSync(tmp); } catch {}
   }
 });
+
+test("COMMAND_ICONS collection contains 20 valid icons and normalizes invalid icons", () => {
+  assert.equal(commands.COMMAND_ICONS.length, 20);
+  assert.ok(commands.COMMAND_ICONS.includes("terminal"));
+  assert.ok(commands.COMMAND_ICONS.includes("rocket"));
+  assert.ok(commands.COMMAND_ICONS.includes("bolt"));
+  assert.equal(commands.normalizeIcon("rocket"), "rocket");
+  assert.equal(commands.normalizeIcon("nonexistent"), "terminal");
+  assert.equal(commands.normalizeIcon(null), "terminal");
+});
+
+test("store manages command icons with default terminal icon and update support", () => {
+  const store = createStore(":memory:");
+  const c1 = store.createCommand({ name: "Default Icon Cmd", type: "powershell", content: "Write-Host 1" });
+  assert.equal(c1.icon, "terminal");
+
+  const c2 = store.createCommand({ name: "Rocket Cmd", type: "bat", content: "@echo off", icon: "rocket" });
+  assert.equal(c2.icon, "rocket");
+
+  const updated = store.saveCommand({ id: c1.id, icon: "bolt" });
+  assert.equal(updated.icon, "bolt");
+
+  const fromGet = store.getCommand(c1.id);
+  assert.equal(fromGet.icon, "bolt");
+});

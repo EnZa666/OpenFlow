@@ -609,7 +609,7 @@ function applyFloatingBubbleState() {
     floatingBubble: mode,
     bubbleElements: elements,
     voiceNoteButton: settings.voiceNoteButton !== false,
-    commands: store.listCommands().map((row) => ({ id: row.id, name: row.name, type: row.type })),
+    commands: store.listCommands().map((row) => ({ id: row.id, name: row.name, type: row.type, icon: row.icon })),
   });
 }
 
@@ -1272,12 +1272,14 @@ const actions = {
       store.deleteCommand(saved.id);
       throw error;
     }
+    applyFloatingBubbleState();
     refreshMain();
     return saved;
   },
   "commands.save": (payload) => {
     const saved = store.saveCommand(payload || {});
     commands.writeScript(commandsDir(), saved);
+    applyFloatingBubbleState();
     refreshMain();
     return saved;
   },

@@ -1654,6 +1654,129 @@ button.saved {
   border: 1px solid #e5e7eb;
 }
 
+
+.command-symbol-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #111111;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform .14s ease, background-color .14s ease, box-shadow .14s ease;
+  padding: 0;
+}
+
+.command-symbol-btn:hover {
+  background: #000000;
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+}
+
+.command-symbol-btn:active {
+  transform: scale(0.95);
+}
+
+.command-symbol-btn svg {
+  display: block;
+}
+
+.cmd-editor-symbol-btn {
+  width: 24px;
+  height: 24px;
+  margin-right: 6px;
+  background: #15803d;
+  border: none;
+}
+
+.cmd-editor-symbol-btn:hover {
+  background: #166534;
+  transform: scale(1.08);
+}
+
+.cmd-icon-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  max-height: 330px;
+  overflow-y: auto;
+  padding: 4px 2px;
+}
+
+.cmd-icon-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border-radius: 14px;
+  background: var(--bg);
+  border: 1.5px solid var(--line);
+  cursor: pointer;
+  transition: border-color .14s ease, background-color .14s ease, transform .14s ease, box-shadow .14s ease;
+  color: var(--fg);
+}
+
+.cmd-icon-option:hover {
+  background: var(--surface);
+  border-color: var(--sand-600);
+  transform: translateY(-2px);
+}
+
+.cmd-icon-option.selected,
+.cmd-icon-option[aria-checked="true"] {
+  border-color: var(--fg);
+  background: var(--surface);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.12);
+}
+
+.cmd-icon-bubble-preview {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #111111;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background-color .14s ease, transform .14s ease;
+}
+
+.cmd-icon-bubble-preview svg {
+  display: block;
+}
+
+.cmd-icon-option:hover .cmd-icon-bubble-preview {
+  background: #000000;
+  transform: scale(1.08);
+}
+
+.cmd-icon-option.selected .cmd-icon-bubble-preview,
+.cmd-icon-option[aria-checked="true"] .cmd-icon-bubble-preview {
+  background: #000000;
+  box-shadow: 0 0 0 2px var(--fg);
+}
+
+.cmd-icon-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.cmd-icon-option:hover .cmd-icon-label,
+.cmd-icon-option.selected .cmd-icon-label,
+.cmd-icon-option[aria-checked="true"] .cmd-icon-label {
+  color: var(--fg);
+}
+
 .command-open-btn {
   flex: 1;
   min-width: 0;

@@ -146,4 +146,33 @@ function run(dir, command, options) {
   });
 }
 
-module.exports = { TYPES, MAX_NAME, MAX_CONTENT, LAUNCHER, validateName, typeOf, scriptPath, writeScript, removeScript, launchSpec, run, normalizeContent };
+
+const COMMAND_ICONS = [
+  "terminal",
+  "bolt",
+  "gear",
+  "rocket",
+  "bug",
+  "trash",
+  "refresh",
+  "shield",
+  "globe",
+  "database",
+  "server",
+  "folder",
+  "code",
+  "cpu",
+  "robot",
+  "wrench",
+  "bell",
+  "power",
+  "sparkles",
+  "play",
+];
+const DEFAULT_ICON = "terminal";
+
+function normalizeIcon(icon) {
+  return COMMAND_ICONS.includes(icon) ? icon : DEFAULT_ICON;
+}
+
+module.exports = { TYPES, MAX_NAME, MAX_CONTENT, LAUNCHER, COMMAND_ICONS, DEFAULT_ICON, normalizeIcon, validateName, typeOf, scriptPath, writeScript, removeScript, launchSpec, run, normalizeContent };

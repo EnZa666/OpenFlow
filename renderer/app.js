@@ -14,6 +14,7 @@ const state = {
   editor: null,
   commandEditor: null,
   commandWizard: null,
+  iconPicker: null,
   commandSearch: "",
   confirmDeleteId: null,
   confirmDeleteCommandId: null,
@@ -76,6 +77,35 @@ const CMD_TYPE_INFO = {
   },
 };
 
+
+const COMMAND_ICONS = [
+  { id: "terminal", label: "Terminal", svg: '<rect x="2.5" y="2.5" width="13" height="13" rx="2.5"></rect><path d="M5.5 6.5l2.75 2.5-2.75 2.5M10 11.5h2.5"></path>' },
+  { id: "bolt", label: "Lightning", svg: '<path d="M9.5 2L4 10h4.5l-1 6 6-8H9l.5-6z"></path>' },
+  { id: "gear", label: "Settings", svg: '<circle cx="9" cy="9" r="2.75"></circle><path d="M9 2.25v1.75M9 14v1.75M2.25 9H4M14 9h1.75M4.22 4.22l1.24 1.24M12.54 12.54l1.24 1.24M4.22 13.78l1.24-1.24M12.54 5.46l1.24-1.24"></path>' },
+  { id: "rocket", label: "Rocket", svg: '<path d="M9 2.5c2.5 1.5 4 4.5 4 7.5l-2 1.5-2-2-2 2-2-1.5c0-3 1.5-6 4-7.5z"></path><path d="M5 11.5L3 14l3.5-.5M13 11.5L15 14l-3.5-.5M9 11.5v4"></path>' },
+  { id: "bug", label: "Bug", svg: '<rect x="6" y="5.5" width="6" height="8" rx="3"></rect><path d="M9 5.5V3.5M6.5 3.5 8 5M11.5 3.5 10 5M4 8h2M12 8h2M4 11.5h2M12 11.5h2"></path>' },
+  { id: "trash", label: "Cleanup", svg: '<path d="M3.5 5h11M7 5V3.5c0-.6.4-1 1-1h2c.6 0 1 .4 1 1V5M5.5 5l.5 9c0 .6.4 1 1 1h4c.6 0 1-.4 1-1l.5-9"></path>' },
+  { id: "refresh", label: "Refresh", svg: '<path d="M3.5 8.5A5.5 5.5 0 0 1 13.5 5l1.5-1.5M15 3.5V7h-3.5"></path><path d="M14.5 9.5A5.5 5.5 0 0 1 4.5 13L3 14.5M3 14.5V11h3.5"></path>' },
+  { id: "shield", label: "Security", svg: '<path d="M9 2.5l5.5 2.5v4.5c0 3.5-3.5 5.8-5.5 6.5-2-0.7-5.5-3-5.5-6.5V5L9 2.5z"></path>' },
+  { id: "globe", label: "Network", svg: '<circle cx="9" cy="9" r="6.5"></circle><path d="M2.5 9h13M9 2.5a10 10 0 0 1 2.5 6.5 10 10 0 0 1-2.5 6.5A10 10 0 0 1 6.5 9 10 10 0 0 1 9 2.5z"></path>' },
+  { id: "database", label: "Database", svg: '<ellipse cx="9" cy="4.5" rx="5.5" ry="2"></ellipse><path d="M3.5 4.5v4.5c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2V4.5"></path><path d="M3.5 9v4.5c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2V9"></path>' },
+  { id: "server", label: "Server", svg: '<rect x="3" y="3" width="12" height="4.5" rx="1.5"></rect><rect x="3" y="10.5" width="12" height="4.5" rx="1.5"></rect><circle cx="5.5" cy="5.25" r=".75" fill="currentColor"></circle><circle cx="5.5" cy="12.75" r=".75" fill="currentColor"></circle>' },
+  { id: "folder", label: "Folder", svg: '<path d="M2.5 4.5c0-.6.4-1 1-1h3.2l1.6 1.8H14.5c.6 0 1 .4 1 1v7c0 .6-.4 1-1 1h-11c-.6 0-1-.4-1-1v-8.8z"></path>' },
+  { id: "code", label: "Code", svg: '<path d="M6 5.5L2.5 9 6 12.5M12 5.5l3.5 3.5-3.5 3.5M10.5 4l-3 10"></path>' },
+  { id: "cpu", label: "CPU", svg: '<rect x="5" y="5" width="8" height="8" rx="1.8"></rect><path d="M7 5V2.5M11 5V2.5M7 15.5V13M11 15.5V13M5 7H2.5M5 11H2.5M15.5 7H13M15.5 11H13"></path>' },
+  { id: "robot", label: "Robot", svg: '<rect x="4" y="5" width="10" height="9" rx="2.5"></rect><path d="M9 2.5V5M2.5 9.5H4M14 9.5h1.5"></path><circle cx="6.5" cy="8.5" r=".8" fill="currentColor"></circle><circle cx="11.5" cy="8.5" r=".8" fill="currentColor"></circle><path d="M6.5 11.5h5"></path>' },
+  { id: "wrench", label: "Wrench", svg: '<path d="M14.5 3.5a3.5 3.5 0 0 0-4.5.5L4 10l-.5 4.5 4.5-.5 6-6a3.5 3.5 0 0 0 .5-4.5z"></path>' },
+  { id: "bell", label: "Bell", svg: '<path d="M9 2.5a3.5 3.5 0 0 0-3.5 3.5c0 3-1.5 4.5-1.5 4.5h10s-1.5-1.5-1.5-4.5a3.5 3.5 0 0 0-3.5-3.5z"></path><path d="M7.5 14a1.8 1.8 0 0 0 3 0"></path>' },
+  { id: "power", label: "Power", svg: '<path d="M9 2.5v5M5 4.5a6 6 0 1 0 8 0"></path>' },
+  { id: "sparkles", label: "Sparkles", svg: '<path d="M9 2.5l1.2 3.3L13.5 7 10.2 8.2 9 11.5 7.8 8.2 4.5 7l3.3-1.2L9 2.5z"></path><path d="M13.5 12l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6.6-1.4z"></path>' },
+  { id: "play", label: "Play", svg: '<polygon points="5.5,3.5 14,9 5.5,14.5" fill="none" stroke="currentColor"></polygon>' },
+];
+
+function getCommandSvg(iconId, w = 18, h = 18) {
+  const item = COMMAND_ICONS.find((c) => c.id === iconId) || COMMAND_ICONS[0];
+  return `<svg width="${w}" height="${h}" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${item.svg}</svg>`;
+}
+
 const SCRIPT_BUBBLE_HTML = '<div class="elem-single" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="13" height="13" rx="2.2"></rect><path d="M5.5 6.5l2.75 2.5-2.75 2.5M10 11.5h2.5"></path></svg></div>';
 const SCRIPT_MINI_ICON = '<svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="13" height="13" rx="2.2"></rect><path d="M5.5 6.5l2.75 2.5-2.75 2.5M10 11.5h2.5"></path></svg>';
 
@@ -85,11 +115,12 @@ function getBubbleElementDef(key) {
     const cmdId = key.slice(4);
     const cmd = ((state.desk && state.desk.commands) || []).find((c) => c.id === cmdId);
     if (cmd) {
+      const iconId = cmd.icon || "terminal";
       return {
         id: key,
         name: cmd.name,
-        html: SCRIPT_BUBBLE_HTML,
-        miniIcon: SCRIPT_MINI_ICON,
+        html: `<div class="elem-single" aria-hidden="true">${getCommandSvg(iconId, 17, 17)}</div>`,
+        miniIcon: getCommandSvg(iconId, 14, 14),
       };
     }
   }
@@ -275,6 +306,7 @@ function render() {
   paintEditor();
   paintCommandEditor();
   paintCommandWizard();
+  paintIconPicker();
   paintOnboarding();
   paintConfirmModal();
 
@@ -351,10 +383,12 @@ function commandsHtml() {
 
   const itemsHtml = list.map((cmd) => {
     const preview = String(cmd.content || "").trim().replace(/\s+/g, " ") || "Empty script — click to edit";
-    const badgeLabel = cmd.type === "powershell" ? "ps1" : (cmd.type === "bat" ? "batch" : "cmd");
     const runTitle = cmd.runAsAdmin ? "Run with Administrator privileges" : "Run command";
+    const iconId = cmd.icon || "terminal";
     return `<div class="note-box command-box" role="listitem">
-      <div class="command-type-pill ${esc(cmd.type)}">${esc(badgeLabel)}</div>
+      <button type="button" class="command-symbol-btn" data-command-icon-btn="${esc(cmd.id)}" title="Change symbol (${esc(iconId)})" aria-label="Change command symbol">
+        ${getCommandSvg(iconId)}
+      </button>
       <button type="button" class="note-open-btn command-open-btn" data-command-open="${esc(cmd.id)}">
         <strong>${esc(cmd.name)}<span class="command-ext-suffix">${esc(cmd.extension)}</span></strong>
         <span>${esc(preview)}</span>
@@ -498,7 +532,8 @@ function paintCommandEditor() {
     return;
   }
   const cmd = state.commandEditor;
-  const editorKey = `cmd_${cmd.id || "__new__"}`;
+  const iconId = cmd.icon || "terminal";
+  const editorKey = `cmd_${cmd.id || "__new__"}_${iconId}`;
   if (editor.dataset.id === editorKey && editor.querySelector("#cmd-editor-body")) {
     editor.hidden = false;
     return;
@@ -509,7 +544,7 @@ function paintCommandEditor() {
   const runAsAdmin = Boolean(cmd.runAsAdmin);
   const runTitle = runAsAdmin ? "Run with Administrator privileges" : "Run command";
   const toggleChecked = runAsAdmin ? "true" : "false";
-  editor.innerHTML = `<header class="note-bubble-head cmd-editor-head"><div class="cmd-title-display"><strong>${esc(cmd.name)}</strong><span class="cmd-fixed-ext">${esc(cmd.extension)}</span></div><button type="button" class="editor-close-btn" id="cmd-editor-back" title="Close" aria-label="Close">${closeIcon}</button></header><textarea id="cmd-editor-body" placeholder="Write or paste your script here..." spellcheck="false" aria-label="Script content">${esc(cmd.content || "")}</textarea><footer class="note-bubble-foot cmd-editor-foot"><label class="cmd-admin-toggle" id="cmd-admin-toggle-label" title="Run as administrator"><button type="button" class="switch-btn" role="switch" id="cmd-editor-admin-toggle" aria-checked="${toggleChecked}" aria-label="Run as administrator"><span class="switch-thumb"></span></button><span class="cmd-admin-label">Run as administrator</span></label><div class="cmd-editor-actions">${cmd.id ? `<button type="button" id="cmd-editor-run" class="btn-secondary" title="${runTitle}"><svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M4.5 3.5v9l8-4.5z"></path></svg><span>Run</span></button>` : ''}<button type="button" id="cmd-editor-save">Save</button></div></footer>`;
+  editor.innerHTML = `<header class="note-bubble-head cmd-editor-head"><div class="cmd-title-display"><button type="button" class="command-symbol-btn cmd-editor-symbol-btn" id="cmd-editor-symbol-btn" title="Change symbol (${esc(iconId)})" aria-label="Change command symbol">${getCommandSvg(iconId, 16, 16)}</button><strong>${esc(cmd.name)}</strong><span class="cmd-fixed-ext">${esc(cmd.extension)}</span></div><button type="button" class="editor-close-btn" id="cmd-editor-back" title="Close" aria-label="Close">${closeIcon}</button></header><textarea id="cmd-editor-body" placeholder="Write or paste your script here..." spellcheck="false" aria-label="Script content">${esc(cmd.content || "")}</textarea><footer class="note-bubble-foot cmd-editor-foot"><label class="cmd-admin-toggle" id="cmd-admin-toggle-label" title="Run as administrator"><button type="button" class="switch-btn" role="switch" id="cmd-editor-admin-toggle" aria-checked="${toggleChecked}" aria-label="Run as administrator"><span class="switch-thumb"></span></button><span class="cmd-admin-label">Run as administrator</span></label><div class="cmd-editor-actions">${cmd.id ? `<button type="button" id="cmd-editor-run" class="btn-secondary" title="${runTitle}"><svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M4.5 3.5v9l8-4.5z"></path></svg><span>Run</span></button>` : ''}<button type="button" id="cmd-editor-save">Save</button></div></footer>`;
   const body = editor.querySelector("#cmd-editor-body");
   if (body) body.focus();
 }
@@ -530,12 +565,74 @@ function paintCommandWizard() {
   }
 
   const typeInfo = CMD_TYPE_INFO[wizard.type] || CMD_TYPE_INFO.powershell;
+  if (wizard.step === 3) {
+    const currentIcon = wizard.icon || "terminal";
+    const iconsHtml = COMMAND_ICONS.map((icon) => {
+      const isSelected = icon.id === currentIcon;
+      return `<button type="button" class="cmd-icon-option${isSelected ? " selected" : ""}" role="radio" aria-checked="${isSelected ? "true" : "false"}" data-cmd-wizard-icon="${esc(icon.id)}" title="${esc(icon.label)}">
+        <div class="cmd-icon-bubble-preview">${getCommandSvg(icon.id, 18, 18)}</div>
+        <span class="cmd-icon-label">${esc(icon.label)}</span>
+      </button>`;
+    }).join("");
+
+    host.innerHTML = `<div class="onboarding-card" role="dialog" aria-modal="true" style="max-width: 580px;">
+      <div>
+        <h2>Choose a Symbol</h2>
+        <p class="sub">Step 3 of 3: Select an icon for <strong>${esc(wizard.name)}${esc(typeInfo.extension)}</strong>.</p>
+      </div>
+      <div class="cmd-icon-picker-grid" role="radiogroup" aria-label="Command Symbol Collection">
+        ${iconsHtml}
+      </div>
+      <div class="onboarding-actions" style="margin-top: 4px;">
+        <button type="button" class="btn-secondary" data-cmd-wizard-back>Back</button>
+        <button type="button" class="btn-primary" data-cmd-wizard-finish>Continue</button>
+      </div>
+    </div>`;
+    return;
+  }
+
   host.innerHTML = `<div class="onboarding-card" role="dialog" aria-modal="true"><div><h2>Name Your Command</h2><p class="sub">Step 2 of 3: Enter a name for your ${esc(typeInfo.title)} script. The name, type and extension will be permanent.</p></div><div><div class="cmd-name-input-group"><input type="text" id="cmd-name-input" placeholder="e.g. Restart Spooler" value="${esc(wizard.name)}" autocomplete="off" spellcheck="false" maxlength="48"><span class="cmd-name-ext">${esc(typeInfo.extension)}</span></div><div class="cmd-input-error" id="cmd-name-error">${esc(wizard.error || "")}</div></div><div class="onboarding-actions"><button type="button" class="btn-secondary" data-cmd-wizard-back>Back</button><button type="button" class="btn-primary" data-cmd-wizard-next>Continue</button></div></div>`;
   const input = host.querySelector("#cmd-name-input");
   if (input) {
     input.focus();
     input.selectionStart = input.selectionEnd = input.value.length;
   }
+}
+
+function paintIconPicker() {
+  const host = document.querySelector("#icon-picker-modal");
+  if (!host) return;
+  if (!state.iconPicker) {
+    host.hidden = true;
+    host.innerHTML = "";
+    return;
+  }
+  host.hidden = false;
+  const currentIcon = state.iconPicker.currentIcon || "terminal";
+  const closeIcon = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3.5" y1="3.5" x2="12.5" y2="12.5"></line><line x1="12.5" y1="3.5" x2="3.5" y2="12.5"></line></svg>';
+  const iconsHtml = COMMAND_ICONS.map((icon) => {
+    const isSelected = icon.id === currentIcon;
+    return `<button type="button" class="cmd-icon-option${isSelected ? " selected" : ""}" role="radio" aria-checked="${isSelected ? "true" : "false"}" data-cmd-icon-choice="${esc(icon.id)}" title="${esc(icon.label)}">
+      <div class="cmd-icon-bubble-preview">${getCommandSvg(icon.id, 18, 18)}</div>
+      <span class="cmd-icon-label">${esc(icon.label)}</span>
+    </button>`;
+  }).join("");
+
+  host.innerHTML = `<div class="onboarding-card" role="dialog" aria-modal="true" style="max-width: 540px;">
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+      <div>
+        <h2>Change Symbol</h2>
+        <p class="sub">Choose a symbol for <strong>${esc(state.iconPicker.name || "Command")}</strong></p>
+      </div>
+      <button type="button" class="editor-close-btn" data-icon-picker-close title="Close" aria-label="Close">${closeIcon}</button>
+    </div>
+    <div class="cmd-icon-picker-grid" role="radiogroup" aria-label="Command Symbol Collection">
+      ${iconsHtml}
+    </div>
+    <div class="onboarding-actions" style="margin-top: 4px;">
+      <button type="button" class="btn-secondary" data-icon-picker-close>Cancel</button>
+    </div>
+  </div>`;
 }
 
 function paintEditor() {
@@ -834,6 +931,16 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    const iconBtn = event.target.closest("[data-command-icon-btn]");
+    if (iconBtn) {
+      const cmd = ((state.desk && state.desk.commands) || []).find((c) => c.id === iconBtn.dataset.commandIconBtn);
+      if (cmd) {
+        state.iconPicker = { commandId: cmd.id, currentIcon: cmd.icon || "terminal", name: cmd.name };
+        render();
+      }
+      return;
+    }
+
     const openCmd = event.target.closest("[data-command-open]");
     if (openCmd) {
       const cmd = ((state.desk && state.desk.commands) || []).find((c) => c.id === openCmd.dataset.commandOpen);
@@ -846,6 +953,7 @@ document.addEventListener("DOMContentLoaded", () => {
           extension: cmd.extension,
           content: cmd.content,
           runAsAdmin: Boolean(cmd.runAsAdmin),
+          icon: cmd.icon || "terminal",
         };
         render();
       }
@@ -1081,6 +1189,38 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   
+  
+  const iconModal = document.querySelector("#icon-picker-modal");
+  if (iconModal) {
+    iconModal.addEventListener("click", async (event) => {
+      if (event.target.closest("[data-icon-picker-close]") || event.target === iconModal) {
+        state.iconPicker = null;
+        paintIconPicker();
+        return;
+      }
+      const choice = event.target.closest("[data-cmd-icon-choice]");
+      if (choice && state.iconPicker) {
+        const newIcon = choice.dataset.cmdIconChoice;
+        const targetCmdId = state.iconPicker.commandId;
+        const isEditor = state.iconPicker.isEditor;
+        state.iconPicker = null;
+        paintIconPicker();
+        if (isEditor && state.commandEditor) {
+          state.commandEditor.icon = newIcon;
+          if (state.commandEditor.id) {
+            await window.openflow.dispatch("commands.save", { id: state.commandEditor.id, icon: newIcon });
+            await load();
+          } else {
+            render();
+          }
+        } else if (targetCmdId) {
+          await window.openflow.dispatch("commands.save", { id: targetCmdId, icon: newIcon });
+          await load();
+        }
+      }
+    });
+  }
+
   const cmdModal = document.querySelector("#command-modal");
   if (cmdModal) {
     cmdModal.addEventListener("click", (event) => {
@@ -1097,8 +1237,12 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       if (event.target.closest("[data-cmd-wizard-back]") && state.commandWizard) {
-        state.commandWizard.step = 1;
-        state.commandWizard.error = "";
+        if (state.commandWizard.step === 3) {
+          state.commandWizard.step = 2;
+        } else {
+          state.commandWizard.step = 1;
+          state.commandWizard.error = "";
+        }
         paintCommandWizard();
         return;
       }
@@ -1114,19 +1258,33 @@ document.addEventListener("DOMContentLoaded", () => {
           if (input) input.focus();
           return;
         }
-        const trimmedName = val.trim();
+        state.commandWizard.name = val.trim();
+        state.commandWizard.step = 3;
+        state.commandWizard.icon = state.commandWizard.icon || "terminal";
+        paintCommandWizard();
+        return;
+      }
+      const wizardIcon = event.target.closest("[data-cmd-wizard-icon]");
+      if (wizardIcon && state.commandWizard) {
+        state.commandWizard.icon = wizardIcon.dataset.cmdWizardIcon;
+        paintCommandWizard();
+        return;
+      }
+      if (event.target.closest("[data-cmd-wizard-finish]") && state.commandWizard) {
         const typeInfo = CMD_TYPE_INFO[state.commandWizard.type] || CMD_TYPE_INFO.powershell;
-        state.commandWizard = null;
         state.commandEditor = {
           id: "",
           isNew: true,
-          name: trimmedName,
+          name: state.commandWizard.name,
           type: typeInfo.id,
           extension: typeInfo.extension,
           content: "",
+          icon: state.commandWizard.icon || "terminal",
           runAsAdmin: false,
         };
+        state.commandWizard = null;
         render();
+        return;
       }
     });
 
@@ -1155,6 +1313,16 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelector("#editor").addEventListener("click", async (event) => {
     if (event.target.closest("#cmd-editor-back")) {
       state.commandEditor = null;
+      render();
+      return;
+    }
+    if (event.target.closest("#cmd-editor-symbol-btn") && state.commandEditor) {
+      state.iconPicker = {
+        commandId: state.commandEditor.id,
+        currentIcon: state.commandEditor.icon || "terminal",
+        name: state.commandEditor.name,
+        isEditor: true,
+      };
       render();
       return;
     }
@@ -1188,6 +1356,7 @@ document.addEventListener("DOMContentLoaded", () => {
           type: state.commandEditor.type,
           content,
           runAsAdmin: Boolean(state.commandEditor.runAsAdmin),
+          icon: state.commandEditor.icon || "terminal",
         });
         cmdId = saved.id;
         state.commandEditor.id = saved.id;
@@ -1197,6 +1366,7 @@ document.addEventListener("DOMContentLoaded", () => {
           id: cmdId,
           content,
           runAsAdmin: Boolean(state.commandEditor.runAsAdmin),
+          icon: state.commandEditor.icon || "terminal",
         });
       }
       const res = await window.openflow.dispatch("commands.run", { id: cmdId });
@@ -1222,12 +1392,14 @@ document.addEventListener("DOMContentLoaded", () => {
           type: state.commandEditor.type,
           content,
           runAsAdmin: Boolean(state.commandEditor.runAsAdmin),
+          icon: state.commandEditor.icon || "terminal",
         });
       } else {
         await window.openflow.dispatch("commands.save", {
           id: state.commandEditor.id,
           content,
           runAsAdmin: Boolean(state.commandEditor.runAsAdmin),
+          icon: state.commandEditor.icon || "terminal",
         });
       }
       await new Promise((resolve) => setTimeout(resolve, 260));
